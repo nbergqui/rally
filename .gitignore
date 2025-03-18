@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+npm-debug.log
+dist/
+
+# Angular-specific
+client/.angular/
+client/dist/
+client/node_modules/
+
+# Editor files
+.vscode/
+.idea/
+*.log
