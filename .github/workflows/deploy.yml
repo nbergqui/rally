@@ -1,0 +1,53 @@
+name: Deploy to Azure Web App
+
+# Trigger the workflow on push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js 22.x
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      # Build Angular app
+      - name: Build Angular App
+        run: |
+          cd client
+          npm install
+          npm run build
+
+      # Prepare Express server and dependencies
+      - name: Prepare Express Server
+        run: |
+          mkdir -p dist/server
+          cp -r server/* dist/server/
+          cp package.json dist/
+          cp package-lock.json dist/
+          cd dist
+          npm install --production
+
+      # Archive the build output
+      - name: Archive Build Output
+        run: |
+          zip -r app.zip dist/*
+        working-directory: ./
+
+      # Deploy to Azure Web App
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "ibr-rally"
+          package: "app.zip"
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
