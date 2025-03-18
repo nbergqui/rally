@@ -41,7 +41,8 @@ jobs:
       # Archive the build output
       - name: Archive Build Output
         run: |
-          zip -r app.zip dist/*
+          cd dist
+          zip -r ../app.zip .
         working-directory: ./
 
       # Deploy to Azure Web App
