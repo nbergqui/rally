@@ -12,3 +12,6 @@ client/node_modules/
 .vscode/
 .idea/
 *.log
+
+# Config files
+.env

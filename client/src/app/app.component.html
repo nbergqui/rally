@@ -1,2 +1,14 @@
 <h1>Angular-Express Hello World!</h1>
+
 <p>API Message: {{ apiMessage().message }}</p>
+
+<div>
+  <h2>Budget Details</h2>
+  <p>ID: {{ budget()?.id }}</p>
+  <p>Name: {{ budget()?.name }}</p>
+  <p>Amount: {{ budget()?.amount }}</p>
+  <p>Created: {{ budget()?.createDate }}</p>
+  <p>Modified: {{ budget()?.modifiedDate }}</p>
+  <p>Key: {{ budget()?.key }}</p>
+  <p>Type: {{ budget()?.type }}</p>
+</div>

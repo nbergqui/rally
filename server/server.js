@@ -1,6 +1,9 @@
 const express = require("express");
 const path = require("path");
-const apiService = require("./api-service"); // Import the API service
+const apiService = require("./api-service");
+const dbService = require("./db"); // Import database service
+require("dotenv").config({ path: "./server/.env" }); // Load environment variables
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -14,6 +17,12 @@ app.use("/api", apiService);
 
 // Serve static files from the browser folder (Angular app)
 app.use(express.static(path.join(__dirname, "../browser")));
+
+// Connect to database on startup
+dbService
+  .connect()
+  .then(() => console.log("Database connected successfully"))
+  .catch((err) => console.error("Failed to connect to DB:", err));
 
 app.get("/health", (req, res) => {
   res.send("Express is running!");

@@ -18,4 +18,10 @@ export class ApiService {
       }
     );
   }
+
+  getBudgetById(budgetId: number) {
+    return toSignal(this.http.get<any>(`${this.apiUrl}/budget/${budgetId}`), {
+      initialValue: null,
+    });
+  }
 }
