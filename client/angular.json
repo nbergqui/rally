@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular-hello-world": {
+    "rally-ui": {
       "projectType": "application",
       "root": "",
       "sourceRoot": "src",
@@ -37,18 +37,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "angular-hello-world:build"
+            "buildTarget": "rally-ui:build"
           },
           "configurations": {
             "production": {
-              "buildTarget": "angular-hello-world:build:production"
+              "buildTarget": "rally-ui:build:production"
             }
           }
         }
       }
     }
   },
-  "defaultProject": "angular-hello-world",
+  "defaultProject": "rally-ui",
   "cli": {
     "analytics": false
   }

@@ -16,7 +16,7 @@ app.use(express.json());
 app.use("/api", apiService);
 
 // Serve static files from the browser folder (Angular app)
-app.use(express.static(path.join(__dirname, "../browser")));
+app.use(express.static(path.join(__dirname, "../dist/browser")));
 
 // Connect to database on startup
 dbService
@@ -31,7 +31,7 @@ app.get("/health", (req, res) => {
 // Send all requests to index.html
 app.get("*", (req, res) => {
   console.log("Request received:", req.url);
-  res.sendFile(path.join(__dirname, "../browser/index.html"), (err) => {
+  res.sendFile(path.join(__dirname, "../dist/browser/index.html"), (err) => {
     if (err) {
       console.error("Error sending file:", err);
     }

@@ -11,7 +11,7 @@ import { ApiService } from "./api.service";
   styleUrls: ["./app.component.css"],
 })
 export class AppComponent {
-  title = "angular-hello-world";
+  title = "IBR";
   apiMessage: Signal<{ message: string }>;
   budget: Signal<any | null> = signal(null); // Signal for budget data (adjust type as needed)
 
