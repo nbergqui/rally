@@ -36,7 +36,7 @@ jobs:
           cp package.json dist/
           cp package-lock.json dist/
           cd dist
-          npm install --production
+          npm install --omit=dev --omit=optional --no-audit --no-fund
 
       # Archive the build output
       - name: Archive Build Output
