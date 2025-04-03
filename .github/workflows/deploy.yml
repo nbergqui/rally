@@ -26,7 +26,7 @@ jobs:
         run: |
           cd client
           npm install
-          npm run build
+          npm run build -- --configuration production
 
       # Prepare Express server and dependencies
       - name: Prepare Express Server
@@ -35,8 +35,6 @@ jobs:
           cp -r server/* dist/server/
           cp package.json dist/
           cp package-lock.json dist/
-          cd dist
-          npm install --omit=dev --omit=optional --no-audit --no-fund
 
       # Archive the build output
       - name: Archive Build Output
