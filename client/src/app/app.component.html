@@ -1,14 +1,19 @@
+<!-- src/app/app.component.html -->
 <h1>IBR</h1>
 
-<p>API Message: {{ apiMessage().message }}</p>
+<p>API Message: {{ apiMessage?.message }}</p>
 
-<div>
-  <h2>Budget Details</h2>
-  <p>ID: {{ budget()?.id }}</p>
-  <p>Name: {{ budget()?.name }}</p>
-  <p>Amount: {{ budget()?.amount }}</p>
-  <p>Created: {{ budget()?.createDate }}</p>
-  <p>Modified: {{ budget()?.modifiedDate }}</p>
-  <p>Key: {{ budget()?.key }}</p>
-  <p>Type: {{ budget()?.type }}</p>
-</div>
+<!-- Debugging states -->
+<p>Is Loading: {{ rallyStore.getIsLoading()() }}</p>
+<p>Error: {{ rallyStore.getError()() || "None" }}</p>
+
+<div *ngIf="rallyStore.getIsLoading()()">Loading bonuses...</div>
+<div *ngIf="rallyStore.getError()()">{{ rallyStore.getError() }}</div>
+<ul *ngIf="!rallyStore.getIsLoading()() && !rallyStore.getError()()">
+  <li *ngFor="let bonus of rallyStore.getBonuses()()">
+    {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
+    {{ bonus.State }}
+  </li>
+</ul>
+<p>Total Bonuses: {{ bonusCount() }}</p>
+<button (click)="loadBonuses()">Refresh Bonuses</button>

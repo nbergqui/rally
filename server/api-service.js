@@ -19,17 +19,15 @@ router.post("/data", (req, res) => {
   res.json({ message: `Received data from ${name}` });
 });
 
-// Get budget by ID
-router.get("/budget/:id", async (req, res) => {
+// GET /api/bonuses endpoint - New endpoint to return all bonus location data
+router.get("/bonuses", async (req, res) => {
   try {
-    const budget = await dbService.getBudgetById(parseInt(req.params.id));
-    if (budget) {
-      res.json(budget);
-    } else {
-      res.status(404).json({ error: "Budget not found" });
-    }
+    console.log("GET /api/bonuses called");
+    const bonusesJson = await dbService.getBonuses();
+    const bonuses = JSON.parse(bonusesJson); // Parse the JSON string to an object
+    res.json(bonuses); // Send the parsed array of bonus objects
   } catch (error) {
-    console.error("Error fetching budget:", error);
+    console.error("Error fetching bonuses:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

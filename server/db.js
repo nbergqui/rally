@@ -80,18 +80,34 @@ class DatabaseService {
     }
   }
 
-  async getBudgetById(id) {
+  async getBonuses() {
     try {
       const pool = await this.getPool();
-      const result = await pool
-        .request()
-        .input("id", sql.BigInt, id)
-        .query(
-          "SELECT Id as id, Name as name, Amount as amount, CreateDate as createDate, ModifiedDate as modifiedDate, [Key] as [key], Type as type FROM dbo.Budgets WHERE Id = @id"
-        );
-      return result.recordset[0] || null;
+      const result = await pool.request().query(`
+          SELECT 
+            BonusCode,
+            Points,
+            BonusName,
+            StreetAddress,
+            City,
+            State,
+            Latitude,
+            Longitude,
+            AvailableHours,
+            Description,
+            Requirements,
+            Leg,
+            Ordinal,
+            Include,
+            Visited
+          FROM dbo.RallyBonuses 
+          ORDER BY Leg, Ordinal
+        `);
+
+      // Return the full recordset as JSON string
+      return JSON.stringify(result.recordset);
     } catch (error) {
-      console.error("Error fetching budget by ID:", error);
+      console.error("Error fetching bonus location data:", error);
       throw error;
     }
   }

@@ -1,7 +1,8 @@
-import { Component, signal } from "@angular/core";
+import { Component, inject, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { Signal } from "@angular/core";
-import { ApiService } from "./api.service";
+import { firstValueFrom } from "rxjs";
+import { RallyStore } from "./stores/rally.store";
+import { ApiService } from "./services/api.service";
 
 @Component({
   selector: "app-root",
@@ -12,11 +13,31 @@ import { ApiService } from "./api.service";
 })
 export class AppComponent {
   title = "IBR";
-  apiMessage: Signal<{ message: string }>;
-  budget: Signal<any | null> = signal(null); // Signal for budget data (adjust type as needed)
+  apiMessage: { message: string } | null = null;
+
+  rallyStore = inject(RallyStore);
+  readonly bonusCount = computed(() => this.rallyStore.getBonusCount()());
 
   constructor(private apiService: ApiService) {
-    this.apiMessage = this.apiService.getHelloMessage();
-    this.budget = this.apiService.getBudgetById(1); // Load budget with ID 1 by default
+    this.loadHelloMessage();
+    this.loadBonuses();
+  }
+
+  async loadHelloMessage() {
+    try {
+      this.apiMessage = await firstValueFrom(this.apiService.getHelloMessage());
+      console.log("API Message Loaded:", this.apiMessage);
+    } catch (error) {
+      console.error("Error loading hello message:", error);
+      this.apiMessage = { message: "Failed to load message" };
+    }
+  }
+
+  async loadBonuses() {
+    console.log("Loading bonuses...");
+    await this.rallyStore.loadBonuses();
+    console.log("Bonuses after load:", this.rallyStore.getBonuses()());
+    console.log("Is Loading:", this.rallyStore.getIsLoading()());
+    console.log("Error:", this.rallyStore.getError()());
   }
 }
