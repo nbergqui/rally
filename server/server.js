@@ -1,6 +1,6 @@
 const express = require("express");
 const path = require("path");
-const cors = require("cors");
+//const cors = require("cors");
 const apiService = require("./api-service");
 const dbService = require("./db"); // Import database service
 require("dotenv").config({ path: "./server/.env" }); // Load environment variables
@@ -12,7 +12,7 @@ console.log("Starting Express server...");
 
 // Middleware to parse JSON bodies
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:4200" }));
+//app.use(cors({ origin: "http://localhost:4200" }));
 
 // Mount the API service at /api
 app.use("/api", apiService);
