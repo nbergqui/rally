@@ -1,19 +1,64 @@
 <!-- src/app/app.component.html -->
-<h1>IBR</h1>
+@if (!isLoadingLegs) {
+<h1>{{ calculateTimeDifference(legs[activeLegId - 1]) }}</h1>
+}
 
-<p>API Message: {{ apiMessage?.message }}</p>
-
-<!-- Debugging states -->
-<p>Is Loading: {{ rallyStore.getIsLoading()() }}</p>
-<p>Error: {{ rallyStore.getError()() || "None" }}</p>
-
-<div *ngIf="rallyStore.getIsLoading()()">Loading bonuses...</div>
-<div *ngIf="rallyStore.getError()()">{{ rallyStore.getError() }}</div>
-<ul *ngIf="!rallyStore.getIsLoading()() && !rallyStore.getError()()">
-  <li *ngFor="let bonus of rallyStore.getBonuses()()">
-    {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
-    {{ bonus.State }}
+<h2>Legs</h2>
+@if (isLoadingLegs) {
+<div>Loading legs...</div>
+} @if (!isLoadingLegs) {
+<p>Legs Count: {{ legs.length }}</p>
+<ul>
+  @if (legs.length) { @for (leg of legs; track leg.Leg) {
+  <li>
+    Leg {{ leg.Leg }} (ID: {{ leg.LegId }}) - Checkpoint:
+    {{ leg.CheckpointTime | date }} - Time Remaining:
+    {{ calculateTimeDifference(leg) }}
   </li>
+  } } @else {
+  <p>No legs available.</p>
+  }
 </ul>
-<p>Total Bonuses: {{ bonusCount() }}</p>
-<button (click)="loadBonuses()">Refresh Bonuses</button>
+}
+
+<h2>Bonuses</h2>
+@if (isLoadingBonuses) {
+<div>Loading bonuses...</div>
+} @if (!isLoadingBonuses) {
+<p>Bonuses Count: {{ bonuses.length }}</p>
+<ul>
+  @if (bonuses.length) { @for (bonus of bonuses; track bonus.BonusCode) { @if
+  (bonus.Leg == activeLegId) {
+  <li>
+    {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
+    {{ bonus.State }} -
+    <a
+      [href]="getGoogleMapsUrl(bonus)"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Maps</a
+    >
+    |
+    <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
+      Waze</a
+    >
+  </li>
+  } } } @else {
+  <p>No bonuses available.</p>
+  }
+</ul>
+}
+
+<h2>Settings</h2>
+<div>Active Leg</div>
+@if (!isLoadingLegs) {
+<div>
+  @for (leg of legs; track leg.Leg) {
+  <label>
+    <input type="radio" [value]="leg.Leg" [(ngModel)]="activeLegId" />
+    Leg {{ leg.Leg }}
+  </label>
+  }
+</div>
+}

@@ -111,6 +111,21 @@ class DatabaseService {
       throw error;
     }
   }
+
+  async getLegs() {
+    try {
+      const pool = await this.getPool();
+      const result = await pool.request().query(`
+        SELECT LegId, Leg, CheckpointTime
+        FROM dbo.RallyLeg
+        ORDER BY Leg
+      `);
+      return JSON.stringify(result.recordset);
+    } catch (error) {
+      console.error("Error fetching legs data:", error);
+      throw error;
+    }
+  }
 }
 
 const dbService = DatabaseService.getInstance();

@@ -32,4 +32,17 @@ router.get("/bonuses", async (req, res) => {
   }
 });
 
+// GET /api/legs endpoint - Returns all leg data
+router.get("/legs", async (req, res) => {
+  try {
+    console.log("GET /api/legs called");
+    const legsJson = await dbService.getLegs();
+    const legs = JSON.parse(legsJson); // Parse the JSON string to an object
+    res.json(legs); // Send the parsed array of leg objects
+  } catch (error) {
+    console.error("Error fetching legs:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;
