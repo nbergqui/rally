@@ -1,4 +1,3 @@
-// server/db.js
 const sql = require("mssql");
 
 class DatabaseService {
@@ -103,8 +102,6 @@ class DatabaseService {
           FROM dbo.RallyBonuses 
           ORDER BY Leg, Ordinal
         `);
-
-      // Return the full recordset as JSON string
       return JSON.stringify(result.recordset);
     } catch (error) {
       console.error("Error fetching bonus location data:", error);
@@ -123,6 +120,96 @@ class DatabaseService {
       return JSON.stringify(result.recordset);
     } catch (error) {
       console.error("Error fetching legs data:", error);
+      throw error;
+    }
+  }
+
+  async updateBonusInclude(bonusCode, include) {
+    try {
+      const pool = await this.getPool();
+      const result = await pool
+        .request()
+        .input("BonusCode", sql.NVarChar, bonusCode)
+        .input("Include", sql.Bit, include).query(`
+          UPDATE dbo.RallyBonuses 
+          SET Include = @Include 
+          WHERE BonusCode = @BonusCode;
+          SELECT 
+            BonusCode,
+            Points,
+            BonusName,
+            StreetAddress,
+            City,
+            State,
+            Latitude,
+            Longitude,
+            AvailableHours,
+            Description,
+            Requirements,
+            Leg,
+            Ordinal,
+            Include,
+            Visited
+          FROM dbo.RallyBonuses 
+          WHERE BonusCode = @BonusCode
+        `);
+      if (result.recordset.length === 0) {
+        throw new Error("Bonus not found");
+      }
+      return JSON.stringify(result.recordset[0]);
+    } catch (error) {
+      console.error("Error updating bonus include:", error);
+      throw error;
+    }
+  }
+
+  async updateBonusOrdinal(updates) {
+    try {
+      const pool = await this.getPool();
+      const transaction = new sql.Transaction(pool);
+      await transaction.begin();
+      const request = transaction.request();
+
+      for (const update of updates) {
+        await request
+          .input(
+            `BonusCode_${update.BonusCode}`,
+            sql.NVarChar,
+            update.BonusCode
+          )
+          .input(`Ordinal_${update.BonusCode}`, sql.Int, update.Ordinal).query(`
+            UPDATE dbo.RallyBonuses 
+            SET Ordinal = @Ordinal_${update.BonusCode}
+            WHERE BonusCode = @BonusCode_${update.BonusCode}
+          `);
+      }
+
+      const result = await request.query(`
+        SELECT 
+          BonusCode,
+          Points,
+          BonusName,
+          StreetAddress,
+          City,
+          State,
+          Latitude,
+          Longitude,
+          AvailableHours,
+          Description,
+          Requirements,
+          Leg,
+          Ordinal,
+          Include,
+          Visited
+        FROM dbo.RallyBonuses 
+        WHERE BonusCode IN (${updates.map((u) => `'${u.BonusCode}'`).join(",")})
+        ORDER BY Ordinal
+      `);
+      await transaction.commit();
+      return JSON.stringify(result.recordset);
+    } catch (error) {
+      console.error("Error updating bonus ordinals:", error);
+      await transaction.rollback();
       throw error;
     }
   }

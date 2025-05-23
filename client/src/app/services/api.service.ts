@@ -1,27 +1,46 @@
-// src/app/services/api.service.ts
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { Leg } from "../models/leg.model";
+import { Observable } from "rxjs";
 import { Bonus } from "../models/bonus.model";
+import { Leg } from "../models/leg.model";
 
 @Injectable({
   providedIn: "root",
 })
 export class ApiService {
   private apiUrl = "/api";
-  //private apiUrl = "http://localhost:3000/api";
+  //private apiUrl = "http://localhost:3000/api"; // Adjust URL as needed
 
   constructor(private http: HttpClient) {}
 
-  getHelloMessage() {
+  getHelloMessage(): Observable<{ message: string }> {
     return this.http.get<{ message: string }>(`${this.apiUrl}/hello`);
   }
 
-  getLegs() {
+  getBonuses(): Observable<Bonus[]> {
+    return this.http.get<Bonus[]>(`${this.apiUrl}/bonuses`);
+  }
+
+  getLegs(): Observable<Leg[]> {
     return this.http.get<Leg[]>(`${this.apiUrl}/legs`);
   }
 
-  getBonuses() {
-    return this.http.get<Bonus[]>(`${this.apiUrl}/bonuses`);
+  updateBonusInclude(bonusCode: string, include: boolean): Observable<Bonus> {
+    return this.http.patch<Bonus>(`${this.apiUrl}/bonuses/${bonusCode}`, {
+      Include: include,
+    });
+  }
+
+  updateBonusOrdinal(
+    updates: { BonusCode: string; Ordinal: number }[]
+  ): Observable<Bonus[]> {
+    const sanitizedUpdates = updates.map(({ BonusCode, Ordinal }) => ({
+      BonusCode,
+      Ordinal,
+    }));
+    return this.http.patch<Bonus[]>(
+      `${this.apiUrl}/bonuses/ordinal`,
+      sanitizedUpdates
+    );
   }
 }

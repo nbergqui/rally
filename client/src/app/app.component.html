@@ -1,6 +1,6 @@
-<!-- src/app/app.component.html -->
 @if (!isLoadingLegs) {
 <h1>{{ calculateTimeDifference(legs[activeLegId - 1]) }}</h1>
+<h2>Total Points (Included Bonuses): {{ getTotalIncludedPoints() }}</h2>
 }
 
 <h2>Legs</h2>
@@ -21,31 +21,86 @@
 </ul>
 }
 
-<h2>Bonuses</h2>
+<h2>Included Bonuses</h2>
 @if (isLoadingBonuses) {
 <div>Loading bonuses...</div>
 } @if (!isLoadingBonuses) {
-<p>Bonuses Count: {{ bonuses.length }}</p>
+<p>Included Bonuses Count: {{ sortedIncludedBonuses.length }}</p>
 <ul>
-  @if (bonuses.length) { @for (bonus of bonuses; track bonus.BonusCode) { @if
-  (bonus.Leg == activeLegId) {
+  @if (sortedIncludedBonuses.length) { @for (bonus of sortedIncludedBonuses;
+  track bonus.BonusCode) {
   <li>
-    {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
-    {{ bonus.State }} -
-    <a
-      [href]="getGoogleMapsUrl(bonus)"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Maps</a
-    >
-    |
-    <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
-      Waze</a
-    >
+    <label>
+      <input
+        type="checkbox"
+        [checked]="bonus.Include"
+        (change)="updateBonusInclude(bonus, $event.target.checked)"
+      />
+      {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
+      {{ bonus.State }} -
+      <a
+        [href]="getGoogleMapsUrl(bonus)"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Maps
+      </a>
+      |
+      <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
+        Waze
+      </a>
+      <button
+        [disabled]="isUpButtonDisabled(bonus)"
+        (click)="moveBonusUp(bonus)"
+      >
+        ↑
+      </button>
+      <button
+        [disabled]="isDownButtonDisabled(bonus)"
+        (click)="moveBonusDown(bonus)"
+      >
+        ↓
+      </button>
+    </label>
   </li>
-  } } } @else {
-  <p>No bonuses available.</p>
+  } } @else {
+  <p>No included bonuses available.</p>
+  }
+</ul>
+}
+
+<h2>Not Included Bonuses</h2>
+@if (isLoadingBonuses) {
+<div>Loading bonuses...</div>
+} @if (!isLoadingBonuses) {
+<p>Not Included Bonuses Count: {{ sortedNotIncludedBonuses.length }}</p>
+<ul>
+  @if (sortedNotIncludedBonuses.length) { @for (bonus of
+  sortedNotIncludedBonuses; track bonus.BonusCode) {
+  <li>
+    <label>
+      <input
+        type="checkbox"
+        [checked]="bonus.Include"
+        (change)="updateBonusInclude(bonus, $event.target.checked)"
+      />
+      {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
+      {{ bonus.State }} -
+      <a
+        [href]="getGoogleMapsUrl(bonus)"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Maps
+      </a>
+      |
+      <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
+        Waze
+      </a>
+    </label>
+  </li>
+  } } @else {
+  <p>No not included bonuses available.</p>
   }
 </ul>
 }
