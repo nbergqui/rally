@@ -1,9 +1,9 @@
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
+require("dotenv").config({ path: "./server/.env" }); // Load environment variables
 const apiService = require("./api-service");
 const dbService = require("./db"); // Import database service
-require("dotenv").config({ path: "./server/.env" }); // Load environment variables
 
 const app = express();
 const port = process.env.PORT || 3000;

@@ -124,41 +124,61 @@ class DatabaseService {
     }
   }
 
-  async updateBonusInclude(bonusCode, include) {
+  async updateBonus(bonusCode, include, visited) {
     try {
       const pool = await this.getPool();
-      const result = await pool
+      const request = pool
         .request()
-        .input("BonusCode", sql.NVarChar, bonusCode)
-        .input("Include", sql.Bit, include).query(`
-          UPDATE dbo.RallyBonuses 
-          SET Include = @Include 
-          WHERE BonusCode = @BonusCode;
-          SELECT 
-            BonusCode,
-            Points,
-            BonusName,
-            StreetAddress,
-            City,
-            State,
-            Latitude,
-            Longitude,
-            AvailableHours,
-            Description,
-            Requirements,
-            Leg,
-            Ordinal,
-            Include,
-            Visited
-          FROM dbo.RallyBonuses 
-          WHERE BonusCode = @BonusCode
-        `);
+        .input("BonusCode", sql.NVarChar, bonusCode);
+
+      let updateFields = [];
+      let queryParams = { BonusCode: bonusCode };
+
+      if (include !== undefined) {
+        updateFields.push("Include = @Include");
+        request.input("Include", sql.Bit, include);
+        queryParams.Include = include;
+      }
+      if (visited !== undefined) {
+        updateFields.push("Visited = @Visited");
+        request.input("Visited", sql.Bit, visited);
+        queryParams.Visited = visited;
+      }
+
+      if (updateFields.length === 0) {
+        throw new Error("No fields to update");
+      }
+
+      const result = await request.query(`
+        UPDATE dbo.RallyBonuses 
+        SET ${updateFields.join(", ")}
+        WHERE BonusCode = @BonusCode;
+        SELECT 
+          BonusCode,
+          Points,
+          BonusName,
+          StreetAddress,
+          City,
+          State,
+          Latitude,
+          Longitude,
+          AvailableHours,
+          Description,
+          Requirements,
+          Leg,
+          Ordinal,
+          Include,
+          Visited
+        FROM dbo.RallyBonuses 
+        WHERE BonusCode = @BonusCode
+      `);
+
       if (result.recordset.length === 0) {
         throw new Error("Bonus not found");
       }
       return JSON.stringify(result.recordset[0]);
     } catch (error) {
-      console.error("Error updating bonus include:", error);
+      console.error("Error updating bonus:", error);
       throw error;
     }
   }
@@ -210,6 +230,82 @@ class DatabaseService {
     } catch (error) {
       console.error("Error updating bonus ordinals:", error);
       await transaction.rollback();
+      throw error;
+    }
+  }
+
+  async getIncludedBonusCoordinates(leg) {
+    try {
+      const pool = await this.getPool();
+      const result = await pool.request().input("Leg", sql.Int, leg).query(`
+          SELECT BonusCode, Latitude, Longitude
+          FROM dbo.RallyBonuses
+          WHERE Leg = @Leg AND Include = 1
+          ORDER BY Ordinal
+        `);
+      return JSON.stringify(result.recordset);
+    } catch (error) {
+      console.error("Error fetching included bonus coordinates:", error);
+      throw error;
+    }
+  }
+
+  async getCachedRoute(startLat, startLon, endLat, endLon) {
+    try {
+      const result = await this.query(
+        `
+        SELECT ResponseJson
+        FROM dbo.RallyDirectionsCache
+        WHERE StartLatitude = @StartLat
+          AND StartLongitude = @StartLon
+          AND EndLatitude = @EndLat
+          AND EndLongitude = @EndLon
+      `,
+        {
+          StartLat: startLat,
+          StartLon: startLon,
+          EndLat: endLat,
+          EndLon: endLon,
+        }
+      );
+      return result.recordset.length > 0
+        ? result.recordset[0].ResponseJson
+        : null;
+    } catch (error) {
+      console.error("Error fetching cached route:", error);
+      throw error;
+    }
+  }
+
+  async cacheRoute(startLat, startLon, endLat, endLon, responseJson) {
+    try {
+      await this.query(
+        `
+        INSERT INTO dbo.RallyDirectionsCache (
+          StartLatitude,
+          StartLongitude,
+          EndLatitude,
+          EndLongitude,
+          ResponseJson
+        )
+        VALUES (
+          @StartLat,
+          @StartLon,
+          @EndLat,
+          @EndLon,
+          @ResponseJson
+        )
+      `,
+        {
+          StartLat: startLat,
+          StartLon: startLon,
+          EndLat: endLat,
+          EndLon: endLon,
+          ResponseJson: responseJson,
+        }
+      );
+    } catch (error) {
+      console.error("Error caching route:", error);
       throw error;
     }
   }

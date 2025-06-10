@@ -8,8 +8,7 @@ import { Leg } from "../models/leg.model";
   providedIn: "root",
 })
 export class ApiService {
-  private apiUrl = "/api";
-  //private apiUrl = "http://localhost:3000/api"; // Adjust URL as needed
+  private apiUrl = "http://localhost:3000/api"; // Adjust URL as needed
 
   constructor(private http: HttpClient) {}
 
@@ -31,6 +30,12 @@ export class ApiService {
     });
   }
 
+  updateBonusVisited(bonusCode: string, visited: boolean): Observable<Bonus> {
+    return this.http.patch<Bonus>(`${this.apiUrl}/bonuses/${bonusCode}`, {
+      Visited: visited,
+    });
+  }
+
   updateBonusOrdinal(
     updates: { BonusCode: string; Ordinal: number }[]
   ): Observable<Bonus[]> {
@@ -42,5 +47,25 @@ export class ApiService {
       `${this.apiUrl}/bonuses/ordinal`,
       sanitizedUpdates
     );
+  }
+
+  getRoutes(
+    leg: number
+  ): Observable<
+    {
+      fromBonusCode: string;
+      toBonusCode: string;
+      distanceMiles: number;
+      travelTimeMinutes: number;
+    }[]
+  > {
+    return this.http.post<
+      {
+        fromBonusCode: string;
+        toBonusCode: string;
+        distanceMiles: number;
+        travelTimeMinutes: number;
+      }[]
+    >(`${this.apiUrl}/routes`, { leg });
   }
 }

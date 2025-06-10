@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { DatePipe } from "@angular/common";
 import { Subscription } from "rxjs";
@@ -13,7 +13,7 @@ import { Leg } from "./models/leg.model";
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.css"],
 })
-export class AppComponent implements OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {
   title = "IBR";
   apiMessage: { message: string } | null = null;
   bonuses: Bonus[] = [];
@@ -27,9 +27,17 @@ export class AppComponent implements OnDestroy {
   bonusCount = 0;
   legCount = 0;
   activeLegId = 1;
+  routes: {
+    fromBonusCode: string;
+    toBonusCode: string;
+    distanceMiles: number;
+    travelTimeMinutes: number;
+  }[] = [];
   private subscriptions = new Subscription();
 
-  constructor(private apiService: ApiService) {
+  constructor(private apiService: ApiService) {}
+
+  ngOnInit() {
     this.loadHelloMessage();
     this.loadLegs();
     this.loadBonuses();
@@ -45,6 +53,19 @@ export class AppComponent implements OnDestroy {
     return this.notIncludedBonuses
       .filter((bonus) => bonus.Leg === this.activeLegId)
       .sort((a, b) => a.Ordinal - b.Ordinal);
+  }
+
+  getRouteForBonus(
+    bonus: Bonus
+  ): { distanceMiles: number; travelTimeMinutes: number } | null {
+    if (!bonus.Latitude || !bonus.Longitude) return null; // Skip invalid coordinates
+    const route = this.routes.find((r) => r.toBonusCode === bonus.BonusCode);
+    return route
+      ? {
+          distanceMiles: route.distanceMiles,
+          travelTimeMinutes: route.travelTimeMinutes,
+        }
+      : null;
   }
 
   loadHelloMessage() {
@@ -74,6 +95,7 @@ export class AppComponent implements OnDestroy {
         this.notIncludedBonuses = bonuses
           .filter((bonus) => bonus.Include === false)
           .sort((a, b) => a.Ordinal - b.Ordinal);
+        this.loadRoutes();
       },
       error: (error) => {
         console.error("Error fetching bonuses:", error);
@@ -107,6 +129,20 @@ export class AppComponent implements OnDestroy {
     this.subscriptions.add(sub);
   }
 
+  loadRoutes() {
+    this.routes = [];
+    const sub = this.apiService.getRoutes(this.activeLegId).subscribe({
+      next: (routes) => {
+        this.routes = routes;
+      },
+      error: (error) => {
+        console.error("Error fetching routes:", error);
+        this.errorBonuses = "Failed to load route data";
+      },
+    });
+    this.subscriptions.add(sub);
+  }
+
   updateBonusInclude(bonus: Bonus, include: boolean) {
     const sub = this.apiService
       .updateBonusInclude(bonus.BonusCode, include)
@@ -124,6 +160,7 @@ export class AppComponent implements OnDestroy {
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
             .sort((a, b) => a.Ordinal - b.Ordinal);
+          this.loadRoutes();
         },
         error: (error) => {
           console.error("Error updating bonus include:", error);
@@ -132,6 +169,38 @@ export class AppComponent implements OnDestroy {
         },
       });
     this.subscriptions.add(sub);
+  }
+
+  updateBonusVisited(bonus: Bonus, visited: boolean) {
+    const sub = this.apiService
+      .updateBonusVisited(bonus.BonusCode, visited)
+      .subscribe({
+        next: (updatedBonus) => {
+          const index = this.bonuses.findIndex(
+            (b) => b.BonusCode === bonus.BonusCode
+          );
+          if (index !== -1) {
+            this.bonuses[index] = { ...bonus, Visited: visited };
+          }
+          this.includedBonuses = this.bonuses
+            .filter((b) => b.Include === true)
+            .sort((a, b) => a.Ordinal - b.Ordinal);
+          this.notIncludedBonuses = this.bonuses
+            .filter((b) => b.Include === false)
+            .sort((a, b) => a.Ordinal - b.Ordinal);
+        },
+        error: (error) => {
+          console.error("Error updating bonus visited:", error);
+          this.errorBonuses =
+            error instanceof Error ? error.message : "Failed to update bonus";
+        },
+      });
+    this.subscriptions.add(sub);
+  }
+
+  updateActiveLegId(legId: number) {
+    this.activeLegId = legId;
+    this.loadRoutes();
   }
 
   moveBonusUp(bonus: Bonus) {
@@ -177,15 +246,12 @@ export class AppComponent implements OnDestroy {
         this.notIncludedBonuses = this.bonuses
           .filter((b) => b.Include === false)
           .sort((a, b) => a.Ordinal - b.Ordinal);
+        this.loadRoutes();
       },
       error: (error) => {
-        console.error("Error swapping bonus ordinals:", {
-          message: error.message,
-          status: error.status,
-          response: error.error,
-        });
+        console.error("Error swapping bonus ordinals:", error);
         this.errorBonuses = "Failed to reorder bonuses; reloading data...";
-        this.loadBonuses(); // Fallback to refresh bonuses from database
+        this.loadBonuses();
       },
     });
     this.subscriptions.add(sub);
@@ -208,14 +274,14 @@ export class AppComponent implements OnDestroy {
   }
 
   calculateTimeDifference(leg: Leg): string {
-    const currentTime = new Date(new Date().toUTCString()); // Current time in UTC
-    const checkpointTime = new Date(leg.CheckpointTime); // Checkpoint time in UTC
+    const currentTime = new Date(new Date().toUTCString());
+    const checkpointTime = new Date(leg.CheckpointTime);
     const timeDiff = checkpointTime.getTime() - currentTime.getTime();
     if (timeDiff <= 0) {
-      return "0h 0m"; // Checkpoint is in the past
+      return "0h 0m";
     }
-    const hours = Math.floor(timeDiff / (1000 * 60 * 60)); // Total hours
-    const minutes = Math.floor((timeDiff / (1000 * 60)) % 60); // Minutes remainder
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
     return `${hours}h ${minutes}m`;
   }
 
@@ -223,6 +289,21 @@ export class AppComponent implements OnDestroy {
     return this.includedBonuses
       .filter((bonus) => bonus.Leg === this.activeLegId)
       .reduce((sum, bonus) => sum + bonus.Points, 0);
+  }
+
+  getTotalTravelTime(): string {
+    const totalMinutes = Math.round(
+      this.routes.reduce((sum, leg) => sum + leg.travelTimeMinutes, 0)
+    );
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  }
+
+  getTotalTravelDistance(): number {
+    return Math.round(
+      this.routes.reduce((sum, leg) => sum + leg.distanceMiles, 0)
+    );
   }
 
   getGoogleMapsUrl(bonus: Bonus): string {

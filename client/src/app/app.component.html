@@ -1,31 +1,18 @@
 @if (!isLoadingLegs) {
-<h1>{{ calculateTimeDifference(legs[activeLegId - 1]) }}</h1>
-<h2>Total Points (Included Bonuses): {{ getTotalIncludedPoints() }}</h2>
+<h1>
+  Leg: {{ activeLegId }} | {{ calculateTimeDifference(legs[activeLegId - 1]) }}
+</h1>
+<h2>Remaining:</h2>
+<h2>
+  Total: {{ getTotalTravelDistance() }}m | {{ getTotalTravelTime() }} |
+  {{ getTotalIncludedPoints() }}p
+</h2>
 }
 
-<h2>Legs</h2>
-@if (isLoadingLegs) {
-<div>Loading legs...</div>
-} @if (!isLoadingLegs) {
-<p>Legs Count: {{ legs.length }}</p>
-<ul>
-  @if (legs.length) { @for (leg of legs; track leg.Leg) {
-  <li>
-    Leg {{ leg.Leg }} (ID: {{ leg.LegId }}) - Checkpoint:
-    {{ leg.CheckpointTime | date }} - Time Remaining:
-    {{ calculateTimeDifference(leg) }}
-  </li>
-  } } @else {
-  <p>No legs available.</p>
-  }
-</ul>
-}
-
-<h2>Included Bonuses</h2>
+<h2>Included: {{ sortedIncludedBonuses.length }}</h2>
 @if (isLoadingBonuses) {
 <div>Loading bonuses...</div>
 } @if (!isLoadingBonuses) {
-<p>Included Bonuses Count: {{ sortedIncludedBonuses.length }}</p>
 <ul>
   @if (sortedIncludedBonuses.length) { @for (bonus of sortedIncludedBonuses;
   track bonus.BonusCode) {
@@ -36,6 +23,12 @@
         [checked]="bonus.Include"
         (change)="updateBonusInclude(bonus, $event.target.checked)"
       />
+      <input
+        type="checkbox"
+        [checked]="bonus.Visited"
+        (change)="updateBonusVisited(bonus, $event.target.checked)"
+      />
+      Visited
       {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
       {{ bonus.State }} -
       <a
@@ -49,6 +42,12 @@
       <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
         Waze
       </a>
+      @if (getRouteForBonus(bonus)) {
+      <span>
+        (From previous: {{ getRouteForBonus(bonus).travelTimeMinutes }} min,
+        {{ getRouteForBonus(bonus).distanceMiles }} miles)
+      </span>
+      }
       <button
         [disabled]="isUpButtonDisabled(bonus)"
         (click)="moveBonusUp(bonus)"
@@ -69,11 +68,10 @@
 </ul>
 }
 
-<h2>Not Included Bonuses</h2>
+<h2>Available: {{ sortedNotIncludedBonuses.length }}</h2>
 @if (isLoadingBonuses) {
 <div>Loading bonuses...</div>
 } @if (!isLoadingBonuses) {
-<p>Not Included Bonuses Count: {{ sortedNotIncludedBonuses.length }}</p>
 <ul>
   @if (sortedNotIncludedBonuses.length) { @for (bonus of
   sortedNotIncludedBonuses; track bonus.BonusCode) {
