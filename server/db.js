@@ -250,6 +250,25 @@ class DatabaseService {
     }
   }
 
+  async getUnvisitedIncludedBonusCoordinates(leg) {
+    try {
+      const pool = await this.getPool();
+      const result = await pool.request().input("Leg", sql.Int, leg).query(`
+          SELECT BonusCode, Latitude, Longitude
+          FROM dbo.RallyBonuses
+          WHERE Leg = @Leg AND Include = 1 AND Visited = 0
+          ORDER BY Ordinal
+        `);
+      return JSON.stringify(result.recordset);
+    } catch (error) {
+      console.error(
+        "Error fetching unvisited included bonus coordinates:",
+        error
+      );
+      throw error;
+    }
+  }
+
   async getCachedRoute(startLat, startLon, endLat, endLon) {
     try {
       const result = await this.query(
@@ -281,6 +300,13 @@ class DatabaseService {
     try {
       await this.query(
         `
+        IF NOT EXISTS (
+          SELECT 1 FROM dbo.RallyDirectionsCache
+          WHERE StartLatitude = @StartLat
+            AND StartLongitude = @StartLon
+            AND EndLatitude = @EndLat
+            AND EndLongitude = @EndLon
+        )
         INSERT INTO dbo.RallyDirectionsCache (
           StartLatitude,
           StartLongitude,
@@ -305,6 +331,12 @@ class DatabaseService {
         }
       );
     } catch (error) {
+      if (error.message.includes("Violation of PRIMARY KEY constraint")) {
+        console.log(
+          `Cache insert skipped for ${startLat},${startLon} to ${endLat},${endLon}: already exists`
+        );
+        return; // Ignore duplicate key errors
+      }
       console.error("Error caching route:", error);
       throw error;
     }

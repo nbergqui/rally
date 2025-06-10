@@ -33,7 +33,16 @@ export class AppComponent implements OnInit, OnDestroy {
     distanceMiles: number;
     travelTimeMinutes: number;
   }[] = [];
+  remainingRoutes: {
+    fromBonusCode: string;
+    toBonusCode: string;
+    distanceMiles: number;
+    travelTimeMinutes: number;
+  }[] = [];
+  currentLocation: { latitude: number; longitude: number } | null = null;
+  locationError: string | null = null;
   private subscriptions = new Subscription();
+  private bonusesLoaded = false;
 
   constructor(private apiService: ApiService) {}
 
@@ -41,6 +50,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loadHelloMessage();
     this.loadLegs();
     this.loadBonuses();
+    this.loadCurrentLocation();
   }
 
   get sortedIncludedBonuses(): Bonus[] {
@@ -55,6 +65,12 @@ export class AppComponent implements OnInit, OnDestroy {
       .sort((a, b) => a.Ordinal - b.Ordinal);
   }
 
+  get sortedUnvisitedIncludedBonuses(): Bonus[] {
+    return this.includedBonuses
+      .filter((bonus) => bonus.Leg === this.activeLegId && !bonus.Visited)
+      .sort((a, b) => a.Ordinal - b.Ordinal);
+  }
+
   getRouteForBonus(
     bonus: Bonus
   ): { distanceMiles: number; travelTimeMinutes: number } | null {
@@ -66,6 +82,34 @@ export class AppComponent implements OnInit, OnDestroy {
           travelTimeMinutes: route.travelTimeMinutes,
         }
       : null;
+  }
+
+  loadCurrentLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.currentLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          this.locationError = null;
+          // Only load remaining routes if bonuses are loaded
+          if (this.bonusesLoaded) {
+            this.loadRemainingRoutes();
+          }
+        },
+        (error) => {
+          this.locationError = `Failed to get location: ${error.message}`;
+          console.error("Geolocation error:", error);
+          this.remainingRoutes = [];
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      this.locationError = "Geolocation is not supported by this browser";
+      console.error("Geolocation not supported");
+      this.remainingRoutes = [];
+    }
   }
 
   loadHelloMessage() {
@@ -95,12 +139,19 @@ export class AppComponent implements OnInit, OnDestroy {
         this.notIncludedBonuses = bonuses
           .filter((bonus) => bonus.Include === false)
           .sort((a, b) => a.Ordinal - b.Ordinal);
-        this.loadRoutes();
+        this.bonusesLoaded = true;
+        // Sequence: load routes first, then remaining routes
+        this.loadRoutes().then(() => {
+          if (this.currentLocation) {
+            this.loadRemainingRoutes();
+          }
+        });
       },
       error: (error) => {
         console.error("Error fetching bonuses:", error);
         this.errorBonuses =
           error instanceof Error ? error.message : "Failed to load bonuses";
+        this.bonusesLoaded = true; // Allow remaining routes to load on error
       },
       complete: () => {
         this.isLoadingBonuses = false;
@@ -129,18 +180,45 @@ export class AppComponent implements OnInit, OnDestroy {
     this.subscriptions.add(sub);
   }
 
-  loadRoutes() {
+  async loadRoutes() {
     this.routes = [];
-    const sub = this.apiService.getRoutes(this.activeLegId).subscribe({
-      next: (routes) => {
-        this.routes = routes;
-      },
-      error: (error) => {
-        console.error("Error fetching routes:", error);
-        this.errorBonuses = "Failed to load route data";
-      },
+    return new Promise<void>((resolve, reject) => {
+      const sub = this.apiService.getRoutes(this.activeLegId).subscribe({
+        next: (routes) => {
+          this.routes = routes;
+          resolve();
+        },
+        error: (error) => {
+          console.error("Error fetching routes:", error);
+          this.errorBonuses = "Failed to load route data";
+          resolve(); // Resolve to allow remaining routes to load
+        },
+      });
+      this.subscriptions.add(sub);
     });
-    this.subscriptions.add(sub);
+  }
+
+  async loadRemainingRoutes() {
+    if (!this.currentLocation) {
+      this.remainingRoutes = [];
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve, reject) => {
+      const sub = this.apiService
+        .getRemainingRoutes(this.activeLegId, this.currentLocation)
+        .subscribe({
+          next: (routes) => {
+            this.remainingRoutes = routes;
+            resolve();
+          },
+          error: (error) => {
+            console.error("Error fetching remaining routes:", error);
+            this.errorBonuses = "Failed to load remaining route data";
+            resolve();
+          },
+        });
+      this.subscriptions.add(sub);
+    });
   }
 
   updateBonusInclude(bonus: Bonus, include: boolean) {
@@ -160,7 +238,12 @@ export class AppComponent implements OnInit, OnDestroy {
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
             .sort((a, b) => a.Ordinal - b.Ordinal);
-          this.loadRoutes();
+          // Sequence: load routes first, then remaining routes
+          this.loadRoutes().then(() => {
+            if (this.currentLocation) {
+              this.loadRemainingRoutes();
+            }
+          });
         },
         error: (error) => {
           console.error("Error updating bonus include:", error);
@@ -188,6 +271,10 @@ export class AppComponent implements OnInit, OnDestroy {
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
             .sort((a, b) => a.Ordinal - b.Ordinal);
+          // Only load remaining routes, as visited affects unvisited bonuses
+          if (this.currentLocation) {
+            this.loadRemainingRoutes();
+          }
         },
         error: (error) => {
           console.error("Error updating bonus visited:", error);
@@ -200,7 +287,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   updateActiveLegId(legId: number) {
     this.activeLegId = legId;
-    this.loadRoutes();
+    // Sequence: load routes first, then remaining routes
+    this.loadRoutes().then(() => {
+      if (this.currentLocation) {
+        this.loadRemainingRoutes();
+      }
+    });
   }
 
   moveBonusUp(bonus: Bonus) {
@@ -246,7 +338,12 @@ export class AppComponent implements OnInit, OnDestroy {
         this.notIncludedBonuses = this.bonuses
           .filter((b) => b.Include === false)
           .sort((a, b) => a.Ordinal - b.Ordinal);
-        this.loadRoutes();
+        // Sequence: load routes first, then remaining routes
+        this.loadRoutes().then(() => {
+          if (this.currentLocation) {
+            this.loadRemainingRoutes();
+          }
+        });
       },
       error: (error) => {
         console.error("Error swapping bonus ordinals:", error);
@@ -291,6 +388,13 @@ export class AppComponent implements OnInit, OnDestroy {
       .reduce((sum, bonus) => sum + bonus.Points, 0);
   }
 
+  getRemainingPoints(): number {
+    return this.sortedUnvisitedIncludedBonuses.reduce(
+      (sum, bonus) => sum + bonus.Points,
+      0
+    );
+  }
+
   getTotalTravelTime(): string {
     const totalMinutes = Math.round(
       this.routes.reduce((sum, leg) => sum + leg.travelTimeMinutes, 0)
@@ -300,9 +404,24 @@ export class AppComponent implements OnInit, OnDestroy {
     return `${hours}h ${minutes}m`;
   }
 
+  getRemainingTravelTime(): string {
+    const totalMinutes = Math.round(
+      this.remainingRoutes.reduce((sum, leg) => sum + leg.travelTimeMinutes, 0)
+    );
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  }
+
   getTotalTravelDistance(): number {
     return Math.round(
       this.routes.reduce((sum, leg) => sum + leg.distanceMiles, 0)
+    );
+  }
+
+  getRemainingTravelDistance(): number {
+    return Math.round(
+      this.remainingRoutes.reduce((sum, leg) => sum + leg.distanceMiles, 0)
     );
   }
 

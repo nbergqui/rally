@@ -126,34 +126,197 @@ router.post("/routes", async (req, res) => {
         isNaN(end.Longitude)
       ) {
         console.warn(
-          `Invalid coordinates for route from ${start.BonusCode} to ${end.BonusCode}`
+          `Invalid coordinates for route from ${start.BonusCode} to ${end.BonusCode}: ${start.Latitude},${start.Longitude} to ${end.Latitude},${end.Longitude}`
         );
         continue; // Skip invalid coordinates
       }
 
-      // Get drive time and check cache
-      const data = await mapsService.getDriveTime(
-        start.Latitude,
-        start.Longitude,
-        end.Latitude,
-        end.Longitude
-      );
+      try {
+        // Get drive time and distance
+        const data = await mapsService.getDriveTime(
+          start.Latitude,
+          start.Longitude,
+          end.Latitude,
+          end.Longitude
+        );
 
-      const travelTimeSeconds = data.routes[0].summary.travelTimeInSeconds;
-      const distanceMiles = data.routes[0].summary.lengthInMeters / 1609.34; // Convert meters to miles
+        // Validate response
+        if (
+          !data.routes ||
+          !Array.isArray(data.routes) ||
+          !data.routes[0] ||
+          !data.routes[0].summary ||
+          typeof data.routes[0].summary.travelTimeInSeconds !== "number" ||
+          typeof data.routes[0].summary.lengthInMeters !== "number"
+        ) {
+          console.warn(
+            `Invalid route data for ${start.BonusCode} to ${end.BonusCode}:`,
+            JSON.stringify(data, null, 2)
+          );
+          continue; // Skip invalid route
+        }
 
-      routes.push({
-        fromBonusCode: start.BonusCode,
-        toBonusCode: end.BonusCode,
-        distanceMiles: Number(distanceMiles.toFixed(2)),
-        travelTimeMinutes: Number((travelTimeSeconds / 60).toFixed(2)),
-      });
+        const travelTimeSeconds = data.routes[0].summary.travelTimeInSeconds;
+        const distanceMiles = data.routes[0].summary.lengthInMeters / 1609.34;
+
+        routes.push({
+          fromBonusCode: start.BonusCode,
+          toBonusCode: end.BonusCode,
+          distanceMiles: Number(distanceMiles.toFixed(2)),
+          travelTimeMinutes: Number((travelTimeSeconds / 60).toFixed(2)),
+        });
+      } catch (error) {
+        console.error(
+          `Failed to calculate route from ${start.BonusCode} to ${end.BonusCode}:`,
+          error.message
+        );
+        continue; // Skip failed route
+      }
     }
 
     res.json(routes);
   } catch (error) {
     console.error("Error calculating routes:", error.message);
     res.status(500).json({ error: "Failed to calculate routes" });
+  }
+});
+
+// POST /api/routes/remaining - Calculates drive time and distance from current location to unvisited included bonuses
+router.post("/routes/remaining", async (req, res) => {
+  try {
+    const { leg, latitude, longitude } = req.body;
+    if (!leg || typeof leg !== "number") {
+      return res.status(400).json({ error: "Leg must be a number" });
+    }
+    if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        error: "Valid latitude and longitude are required",
+      });
+    }
+
+    const coordinatesJson =
+      await dbService.getUnvisitedIncludedBonusCoordinates(leg);
+    const coordinates = JSON.parse(coordinatesJson);
+    if (coordinates.length === 0) {
+      return res.json([]); // No unvisited bonuses
+    }
+
+    const routes = [];
+    // First route: from current location to first unvisited bonus
+    const firstBonus = coordinates[0];
+    if (
+      firstBonus.Latitude &&
+      firstBonus.Longitude &&
+      !isNaN(firstBonus.Latitude) &&
+      !isNaN(firstBonus.Longitude)
+    ) {
+      try {
+        const data = await mapsService.getDriveTime(
+          latitude,
+          longitude,
+          firstBonus.Latitude,
+          firstBonus.Longitude
+        );
+
+        // Validate response
+        if (
+          !data.routes ||
+          !Array.isArray(data.routes) ||
+          !data.routes[0] ||
+          !data.routes[0].summary ||
+          typeof data.routes[0].summary.travelTimeInSeconds !== "number" ||
+          typeof data.routes[0].summary.lengthInMeters !== "number"
+        ) {
+          console.warn(
+            `Invalid route data for CURRENT_LOCATION to ${firstBonus.BonusCode}:`,
+            JSON.stringify(data, null, 2)
+          );
+        } else {
+          const travelTimeSeconds = data.routes[0].summary.travelTimeInSeconds;
+          const distanceMiles = data.routes[0].summary.lengthInMeters / 1609.34;
+
+          routes.push({
+            fromBonusCode: "CURRENT_LOCATION",
+            toBonusCode: firstBonus.BonusCode,
+            distanceMiles: Number(distanceMiles.toFixed(2)),
+            travelTimeMinutes: Number((travelTimeSeconds / 60).toFixed(2)),
+          });
+        }
+      } catch (error) {
+        console.error(
+          `Failed to calculate route from CURRENT_LOCATION to ${firstBonus.BonusCode}:`,
+          error.message
+        );
+      }
+    }
+
+    // Subsequent routes: between unvisited bonuses
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      const start = coordinates[i];
+      const end = coordinates[i + 1];
+
+      if (
+        !start.Latitude ||
+        !start.Longitude ||
+        !end.Latitude ||
+        !end.Longitude ||
+        isNaN(start.Latitude) ||
+        isNaN(start.Longitude) ||
+        isNaN(end.Latitude) ||
+        isNaN(end.Longitude)
+      ) {
+        console.warn(
+          `Invalid coordinates for route from ${start.BonusCode} to ${end.BonusCode}: ${start.Latitude},${start.Longitude} to ${end.Latitude},${end.Longitude}`
+        );
+        continue;
+      }
+
+      try {
+        const data = await mapsService.getDriveTime(
+          start.Latitude,
+          start.Longitude,
+          end.Latitude,
+          end.Longitude
+        );
+
+        // Validate response
+        if (
+          !data.routes ||
+          !Array.isArray(data.routes) ||
+          !data.routes[0] ||
+          !data.routes[0].summary ||
+          typeof data.routes[0].summary.travelTimeInSeconds !== "number" ||
+          typeof data.routes[0].summary.lengthInMeters !== "number"
+        ) {
+          console.warn(
+            `Invalid route data for ${start.BonusCode} to ${end.BonusCode}:`,
+            JSON.stringify(data, null, 2)
+          );
+          continue;
+        }
+
+        const travelTimeSeconds = data.routes[0].summary.travelTimeInSeconds;
+        const distanceMiles = data.routes[0].summary.lengthInMeters / 1609.34;
+
+        routes.push({
+          fromBonusCode: start.BonusCode,
+          toBonusCode: end.BonusCode,
+          distanceMiles: Number(distanceMiles.toFixed(2)),
+          travelTimeMinutes: Number((travelTimeSeconds / 60).toFixed(2)),
+        });
+      } catch (error) {
+        console.error(
+          `Failed to calculate route from ${start.BonusCode} to ${end.BonusCode}:`,
+          error.message
+        );
+        continue; // Skip failed route
+      }
+    }
+
+    res.json(routes);
+  } catch (error) {
+    console.error("Error calculating remaining routes:", error.message);
+    res.status(500).json({ error: "Failed to calculate remaining routes" });
   }
 });
 

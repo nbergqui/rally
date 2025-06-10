@@ -68,4 +68,29 @@ export class ApiService {
       }[]
     >(`${this.apiUrl}/routes`, { leg });
   }
+
+  getRemainingRoutes(
+    leg: number,
+    location: { latitude: number; longitude: number }
+  ): Observable<
+    {
+      fromBonusCode: string;
+      toBonusCode: string;
+      distanceMiles: number;
+      travelTimeMinutes: number;
+    }[]
+  > {
+    return this.http.post<
+      {
+        fromBonusCode: string;
+        toBonusCode: string;
+        distanceMiles: number;
+        travelTimeMinutes: number;
+      }[]
+    >(`${this.apiUrl}/routes/remaining`, {
+      leg,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
+  }
 }

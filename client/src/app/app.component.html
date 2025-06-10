@@ -2,7 +2,10 @@
 <h1>
   Leg: {{ activeLegId }} | {{ calculateTimeDifference(legs[activeLegId - 1]) }}
 </h1>
-<h2>Remaining:</h2>
+<h2>
+  Remaining: {{ getRemainingTravelDistance() }}m |
+  {{ getRemainingTravelTime() }} | {{ getRemainingPoints() }}p
+</h2>
 <h2>
   Total: {{ getTotalTravelDistance() }}m | {{ getTotalTravelTime() }} |
   {{ getTotalIncludedPoints() }}p
