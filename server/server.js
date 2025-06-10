@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 require("dotenv").config({ path: "./server/.env" }); // Load environment variables
-const apiService = require("./api-service");
+const apiService = require("./routes");
 const dbService = require("./db"); // Import database service
 
 const app = express();
