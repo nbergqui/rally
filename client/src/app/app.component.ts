@@ -81,13 +81,11 @@ export class AppComponent implements OnInit, OnDestroy {
     const route = this.routes.find((r) => r.toBonusCode === bonus.BonusCode);
     if (!route) return null;
 
-    // Calculate running total up to this bonus
     const bonusIndex = this.sortedIncludedBonuses.findIndex(
       (b) => b.BonusCode === bonus.BonusCode
     );
     if (bonusIndex === -1) return null;
 
-    // Sum distance and time for all routes up to this bonus, including layovers
     let runningDistanceMiles = 0;
     let runningTravelTimeMinutes = 0;
     for (let i = 0; i < bonusIndex; i++) {
@@ -116,6 +114,22 @@ export class AppComponent implements OnInit, OnDestroy {
     return `${hours.toString().padStart(2, "0")}h ${mins
       .toString()
       .padStart(2, "0")}m`;
+  }
+
+  formatUtcToLocal(utcDate: string): string {
+    const date = new Date(utcDate);
+    return date.toLocaleString(); // Uses browser's local timezone
+  }
+
+  calculateEta(
+    referenceTime: string,
+    runningTravelTimeMinutes: number
+  ): string {
+    const refTime = new Date(referenceTime);
+    const eta = new Date(
+      refTime.getTime() + runningTravelTimeMinutes * 60 * 1000
+    );
+    return eta.toLocaleString(); // Local time
   }
 
   loadCurrentLocation() {
@@ -317,7 +331,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   updateBonusLayover(bonus: Bonus, layoverMinutes: number) {
     if (layoverMinutes < 0) {
-      layoverMinutes = 0; // Prevent negative values
+      layoverMinutes = 0;
     }
     const sub = this.apiService
       .updateBonusLayover(bonus.BonusCode, layoverMinutes)
@@ -433,16 +447,24 @@ export class AppComponent implements OnInit, OnDestroy {
     return index === legBonuses.length - 1;
   }
 
-  calculateTimeDifference(leg: Leg): string {
-    const currentTime = new Date(new Date().toUTCString());
+  calculateTimeDifference(leg: Leg): {
+    timeDiff: string;
+    referenceTime: string;
+  } {
+    const currentTime = new Date();
     const checkpointTime = new Date(leg.CheckpointTime);
-    const timeDiff = checkpointTime.getTime() - currentTime.getTime();
-    if (timeDiff <= 0) {
-      return "0h 0m";
+    const startTime = new Date(leg.StartTime);
+    let referenceTime =
+      startTime > currentTime ? leg.StartTime : currentTime.toISOString();
+
+    const timeDiffMs =
+      checkpointTime.getTime() - new Date(referenceTime).getTime();
+    if (timeDiffMs <= 0) {
+      return { timeDiff: "0h 0m", referenceTime };
     }
-    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-    const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
-    return `${hours}h ${minutes}m`;
+    const hours = Math.floor(timeDiffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiffMs / (1000 * 60)) % 60);
+    return { timeDiff: `${hours}h ${minutes}m`, referenceTime };
   }
 
   getTotalIncludedPoints(): number {

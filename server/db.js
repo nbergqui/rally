@@ -109,7 +109,7 @@ class DatabaseService {
     try {
       const pool = await this.getPool();
       const result = await pool.request().query(`
-        SELECT LegId, Leg, CheckpointTime
+        SELECT LegId, Leg, CheckpointTime, StartTime
         FROM dbo.RallyLeg
         ORDER BY Leg
       `);

@@ -1,6 +1,9 @@
 @if (!isLoadingLegs) {
 <h1>
-  Leg: {{ activeLegId }} | {{ calculateTimeDifference(legs[activeLegId - 1]) }}
+  Leg: {{ activeLegId }} | Start:
+  {{ formatUtcToLocal(legs[activeLegId - 1].StartTime) }} | Checkpoint:
+  {{ formatUtcToLocal(legs[activeLegId - 1].CheckpointTime) }} | Time to
+  Checkpoint: {{ calculateTimeDifference(legs[activeLegId - 1]).timeDiff }}
 </h1>
 <h2>
   Remaining: {{ getRemainingTravelDistance() }}m |
@@ -53,7 +56,13 @@
           formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes)
         }}
         (incl. layovers),
-        {{ getRouteForBonus(bonus).runningDistanceMiles }} miles)
+        {{ getRouteForBonus(bonus).runningDistanceMiles }} miles | ETA:
+        {{
+          calculateEta(
+            calculateTimeDifference(legs[activeLegId - 1]).referenceTime,
+            getRouteForBonus(bonus).runningTravelTimeMinutes
+          )
+        }})
       </span>
       }
       <span>
