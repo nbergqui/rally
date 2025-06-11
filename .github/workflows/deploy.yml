@@ -35,6 +35,8 @@ jobs:
           cp -r server/* dist/server/
           cp package.json dist/
           cp package-lock.json dist/
+          cd dist
+          npm install --production
 
       # Archive the build output
       - name: Archive Build Output

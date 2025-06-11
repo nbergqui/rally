@@ -8,7 +8,8 @@ import { Leg } from "../models/leg.model";
   providedIn: "root",
 })
 export class ApiService {
-  private apiUrl = "http://localhost:3000/api"; // Adjust URL as needed
+  private apiUrl = "/api";
+  //private apiUrl = "http://localhost:3000/api";
 
   constructor(private http: HttpClient) {}
 
@@ -49,9 +50,7 @@ export class ApiService {
     );
   }
 
-  getRoutes(
-    leg: number
-  ): Observable<
+  getRoutes(leg: number): Observable<
     {
       fromBonusCode: string;
       toBonusCode: string;
