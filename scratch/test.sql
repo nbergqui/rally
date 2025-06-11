@@ -1,22 +1,19 @@
 SELECT TOP (1000) [BonusID]
       ,[BonusCode]
-      ,[Points]
       ,[BonusName]
-      ,[StreetAddress]
-      ,[City]
-      ,[State]
+      ,[Points]
       ,[Latitude]
       ,[Longitude]
       ,[AvailableHours]
       ,[Description]
-      ,[Requirements]
       ,[Leg]
       ,[Ordinal]
       ,[Include]
       ,[Visited]
-  FROM RallyBonuses
+      ,[LayoverMinutes]
+  FROM [dbo].[RallyBonuses]
   WHERE [Leg] = 1
-  ORDER BY [Ordinal]
+  ORDER BY [Ordinal];
 
   update RallyBonuses set Leg = 1
   where Leg = 4
@@ -26,9 +23,9 @@ SELECT TOP (1000) [BonusID]
     [Latitude], [Longitude], [AvailableHours], [Description], [Requirements], 
     [Leg], [Ordinal], [Include], [Visited]
 ) VALUES (
-    'IABW', 1234, 'Baymont by Wyndham Pella', NULL, 'Unknown', 'IA', 
-    41.4145, -92.9428, NULL, NULL, NULL, 
-    1, 1, 1, 0
+    'REST1', 0, 'Rest 1', NULL, 'n/a', 'NA', 
+    0, 0, NULL, NULL, NULL, 
+    1, 41, 0, 0
 );
 
 INSERT INTO [dbo].[RallyBonuses] (
@@ -38,7 +35,7 @@ INSERT INTO [dbo].[RallyBonuses] (
 ) VALUES (
     'IAMH', 234, 'Matt''s House', NULL, 'Unknown', 'IA', 
     41.3985, -92.9026, NULL, NULL, NULL, 
-    1, 2, 1, 0
+    1, 41, 1, 0
 );
 
 select * from RallyLeg
@@ -73,4 +70,6 @@ ON dbo.RallyDirectionsCache (StartLatitude, StartLongitude, EndLatitude, EndLong
 
 
 
+DROP TABLE [dbo].[RallyBonuses];
 
+EXECUTE sp_rename N'[dbo].[tmp_ms_xx_RallyBonuses]', N'RallyBonuses';

@@ -1,19 +1,15 @@
-// src/app/models/bonus.model.ts
-
 export interface Bonus {
+  BonusID: number;
   BonusCode: string;
-  Points: number;
   BonusName: string;
-  StreetAddress: string | null;
-  City: string;
-  State: string;
+  Points: number;
   Latitude: number;
   Longitude: number;
   AvailableHours: string;
   Description: string;
-  Requirements: string;
   Leg: number;
   Ordinal: number;
   Include: boolean;
   Visited: boolean;
+  LayoverMinutes: number;
 }

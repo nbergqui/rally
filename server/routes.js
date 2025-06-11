@@ -95,6 +95,34 @@ router.patch("/bonuses/:bonusCode", async (req, res) => {
   }
 });
 
+// PATCH /api/bonuses/:bonusCode/layover endpoint - Updates LayoverMinutes
+router.patch("/bonuses/:bonusCode/layover", async (req, res) => {
+  try {
+    const { LayoverMinutes } = req.body;
+    if (LayoverMinutes === undefined) {
+      return res.status(400).json({ error: "LayoverMinutes must be provided" });
+    }
+    if (typeof LayoverMinutes !== "number" || LayoverMinutes < 0) {
+      return res
+        .status(400)
+        .json({ error: "LayoverMinutes must be a non-negative number" });
+    }
+
+    const bonusJson = await dbService.updateBonusLayoverMinutes(
+      req.params.bonusCode,
+      LayoverMinutes
+    );
+    const bonus = JSON.parse(bonusJson);
+    res.json(bonus);
+  } catch (error) {
+    console.error("Error updating bonus layover:", error);
+    if (error.message === "Bonus not found") {
+      return res.status(404).json({ error: "Bonus not found" });
+    }
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // POST /api/routes endpoint - Calculates drive time and distance between included bonuses
 router.post("/routes", async (req, res) => {
   try {

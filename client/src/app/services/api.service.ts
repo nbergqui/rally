@@ -37,6 +37,18 @@ export class ApiService {
     });
   }
 
+  updateBonusLayover(
+    bonusCode: string,
+    layoverMinutes: number
+  ): Observable<Bonus> {
+    return this.http.patch<Bonus>(
+      `${this.apiUrl}/bonuses/${bonusCode}/layover`,
+      {
+        LayoverMinutes: layoverMinutes,
+      }
+    );
+  }
+
   updateBonusOrdinal(
     updates: { BonusCode: string; Ordinal: number }[]
   ): Observable<Bonus[]> {

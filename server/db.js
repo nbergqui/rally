@@ -5,10 +5,10 @@ class DatabaseService {
   pool = null;
 
   config = {
-    user: process.env.DB_USER || "yantp_sa",
-    password: process.env.DB_PASSWORD || "Cjoav&#s53E3yAw2",
-    server: process.env.DB_SERVER || "yantp.database.windows.net",
-    database: process.env.DB_NAME || "Budget",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
     port: 1433,
     options: {
       encrypt: true, // Required for Azure
@@ -22,9 +22,7 @@ class DatabaseService {
     connectionTimeout: 30000,
   };
 
-  constructor() {
-    // Singleton pattern
-  }
+  constructor() {}
 
   static getInstance() {
     if (!DatabaseService.instance) {
@@ -83,25 +81,23 @@ class DatabaseService {
     try {
       const pool = await this.getPool();
       const result = await pool.request().query(`
-          SELECT 
-            BonusCode,
-            Points,
-            BonusName,
-            StreetAddress,
-            City,
-            State,
-            Latitude,
-            Longitude,
-            AvailableHours,
-            Description,
-            Requirements,
-            Leg,
-            Ordinal,
-            Include,
-            Visited
-          FROM dbo.RallyBonuses 
-          ORDER BY Leg, Ordinal
-        `);
+            SELECT
+              BonusID,
+              BonusCode,
+              BonusName,
+              Points,
+              Latitude,
+              Longitude,
+              AvailableHours,
+              Description,
+              Leg,
+              Ordinal,
+              Include,
+              Visited,
+              LayoverMinutes
+            FROM dbo.RallyBonuses 
+            ORDER BY Leg, Ordinal
+          `);
       return JSON.stringify(result.recordset);
     } catch (error) {
       console.error("Error fetching bonus location data:", error);
@@ -154,21 +150,19 @@ class DatabaseService {
         SET ${updateFields.join(", ")}
         WHERE BonusCode = @BonusCode;
         SELECT 
-          BonusCode,
-          Points,
-          BonusName,
-          StreetAddress,
-          City,
-          State,
-          Latitude,
-          Longitude,
-          AvailableHours,
-          Description,
-          Requirements,
-          Leg,
-          Ordinal,
-          Include,
-          Visited
+              BonusID,
+              BonusCode,
+              BonusName,
+              Points,
+              Latitude,
+              Longitude,
+              AvailableHours,
+              Description,
+              Leg,
+              Ordinal,
+              Include,
+              Visited,
+              LayoverMinutes
         FROM dbo.RallyBonuses 
         WHERE BonusCode = @BonusCode
       `);
@@ -179,6 +173,47 @@ class DatabaseService {
       return JSON.stringify(result.recordset[0]);
     } catch (error) {
       console.error("Error updating bonus:", error);
+      throw error;
+    }
+  }
+
+  async updateBonusLayoverMinutes(bonusCode, layoverMinutes) {
+    try {
+      const pool = await this.getPool();
+      const request = pool
+        .request()
+        .input("BonusCode", sql.NVarChar, bonusCode)
+        .input("LayoverMinutes", sql.Int, layoverMinutes);
+
+      const result = await request.query(`
+        UPDATE dbo.RallyBonuses 
+        SET LayoverMinutes = @LayoverMinutes
+        WHERE BonusCode = @BonusCode;
+        SELECT 
+          BonusID,
+          BonusCode,
+          BonusName,
+          Points,
+          Latitude,
+          Longitude,
+          AvailableHours,
+          Description,
+          Leg,
+          Ordinal,
+          Include,
+          Visited,
+          LayoverMinutes
+        FROM dbo.RallyBonuses 
+        WHERE BonusCode = @BonusCode
+      `);
+
+      if (result.recordset.length === 0) {
+        throw new Error("Bonus not found");
+      }
+
+      return JSON.stringify(result.recordset[0]);
+    } catch (error) {
+      console.error("Error updating bonus layover minutes:", error);
       throw error;
     }
   }
@@ -205,26 +240,26 @@ class DatabaseService {
       }
 
       const result = await request.query(`
-        SELECT 
-          BonusCode,
-          Points,
-          BonusName,
-          StreetAddress,
-          City,
-          State,
-          Latitude,
-          Longitude,
-          AvailableHours,
-          Description,
-          Requirements,
-          Leg,
-          Ordinal,
-          Include,
-          Visited
-        FROM dbo.RallyBonuses 
-        WHERE BonusCode IN (${updates.map((u) => `'${u.BonusCode}'`).join(",")})
-        ORDER BY Ordinal
-      `);
+            SELECT
+              BonusID,
+              BonusCode,
+              BonusName,
+              Points,
+              Latitude,
+              Longitude,
+              AvailableHours,
+              Description,
+              Leg,
+              Ordinal,
+              Include,
+              Visited,
+              LayoverMinutes
+            FROM dbo.RallyBonuses 
+            WHERE BonusCode IN (${updates
+              .map((u) => `'${u.BonusCode}'`)
+              .join(",")})
+            ORDER BY Ordinal
+          `);
       await transaction.commit();
       return JSON.stringify(result.recordset);
     } catch (error) {

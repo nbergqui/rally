@@ -71,17 +71,51 @@ export class AppComponent implements OnInit, OnDestroy {
       .sort((a, b) => a.Ordinal - b.Ordinal);
   }
 
-  getRouteForBonus(
-    bonus: Bonus
-  ): { distanceMiles: number; travelTimeMinutes: number } | null {
-    if (!bonus.Latitude || !bonus.Longitude) return null; // Skip invalid coordinates
+  getRouteForBonus(bonus: Bonus): {
+    distanceMiles: number;
+    travelTimeMinutes: number;
+    runningDistanceMiles: number;
+    runningTravelTimeMinutes: number;
+  } | null {
+    if (!bonus.Latitude || !bonus.Longitude) return null;
     const route = this.routes.find((r) => r.toBonusCode === bonus.BonusCode);
-    return route
-      ? {
-          distanceMiles: route.distanceMiles,
-          travelTimeMinutes: route.travelTimeMinutes,
-        }
-      : null;
+    if (!route) return null;
+
+    // Calculate running total up to this bonus
+    const bonusIndex = this.sortedIncludedBonuses.findIndex(
+      (b) => b.BonusCode === bonus.BonusCode
+    );
+    if (bonusIndex === -1) return null;
+
+    // Sum distance and time for all routes up to this bonus, including layovers
+    let runningDistanceMiles = 0;
+    let runningTravelTimeMinutes = 0;
+    for (let i = 0; i < bonusIndex; i++) {
+      const prevRoute = this.routes.find(
+        (r) => r.toBonusCode === this.sortedIncludedBonuses[i + 1].BonusCode
+      );
+      if (prevRoute) {
+        runningDistanceMiles += prevRoute.distanceMiles;
+        runningTravelTimeMinutes +=
+          prevRoute.travelTimeMinutes +
+          this.sortedIncludedBonuses[i].LayoverMinutes;
+      }
+    }
+
+    return {
+      distanceMiles: route.distanceMiles,
+      travelTimeMinutes: route.travelTimeMinutes,
+      runningDistanceMiles: Number(runningDistanceMiles.toFixed(2)),
+      runningTravelTimeMinutes: Number(runningTravelTimeMinutes.toFixed(2)),
+    };
+  }
+
+  formatTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hours.toString().padStart(2, "0")}h ${mins
+      .toString()
+      .padStart(2, "0")}m`;
   }
 
   loadCurrentLocation() {
@@ -93,7 +127,6 @@ export class AppComponent implements OnInit, OnDestroy {
             longitude: position.coords.longitude,
           };
           this.locationError = null;
-          // Only load remaining routes if bonuses are loaded
           if (this.bonusesLoaded) {
             this.loadRemainingRoutes();
           }
@@ -140,7 +173,6 @@ export class AppComponent implements OnInit, OnDestroy {
           .filter((bonus) => bonus.Include === false)
           .sort((a, b) => a.Ordinal - b.Ordinal);
         this.bonusesLoaded = true;
-        // Sequence: load routes first, then remaining routes
         this.loadRoutes().then(() => {
           if (this.currentLocation) {
             this.loadRemainingRoutes();
@@ -151,7 +183,7 @@ export class AppComponent implements OnInit, OnDestroy {
         console.error("Error fetching bonuses:", error);
         this.errorBonuses =
           error instanceof Error ? error.message : "Failed to load bonuses";
-        this.bonusesLoaded = true; // Allow remaining routes to load on error
+        this.bonusesLoaded = true;
       },
       complete: () => {
         this.isLoadingBonuses = false;
@@ -191,7 +223,7 @@ export class AppComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error("Error fetching routes:", error);
           this.errorBonuses = "Failed to load route data";
-          resolve(); // Resolve to allow remaining routes to load
+          resolve();
         },
       });
       this.subscriptions.add(sub);
@@ -238,7 +270,6 @@ export class AppComponent implements OnInit, OnDestroy {
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
             .sort((a, b) => a.Ordinal - b.Ordinal);
-          // Sequence: load routes first, then remaining routes
           this.loadRoutes().then(() => {
             if (this.currentLocation) {
               this.loadRemainingRoutes();
@@ -271,7 +302,6 @@ export class AppComponent implements OnInit, OnDestroy {
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
             .sort((a, b) => a.Ordinal - b.Ordinal);
-          // Only load remaining routes, as visited affects unvisited bonuses
           if (this.currentLocation) {
             this.loadRemainingRoutes();
           }
@@ -285,9 +315,43 @@ export class AppComponent implements OnInit, OnDestroy {
     this.subscriptions.add(sub);
   }
 
+  updateBonusLayover(bonus: Bonus, layoverMinutes: number) {
+    if (layoverMinutes < 0) {
+      layoverMinutes = 0; // Prevent negative values
+    }
+    const sub = this.apiService
+      .updateBonusLayover(bonus.BonusCode, layoverMinutes)
+      .subscribe({
+        next: (updatedBonus) => {
+          const index = this.bonuses.findIndex(
+            (b) => b.BonusCode === bonus.BonusCode
+          );
+          if (index !== -1) {
+            this.bonuses[index] = { ...bonus, LayoverMinutes: layoverMinutes };
+          }
+          this.includedBonuses = this.bonuses
+            .filter((b) => b.Include === true)
+            .sort((a, b) => a.Ordinal - b.Ordinal);
+          this.notIncludedBonuses = this.bonuses
+            .filter((b) => b.Include === false)
+            .sort((a, b) => a.Ordinal - b.Ordinal);
+          this.loadRoutes().then(() => {
+            if (this.currentLocation) {
+              this.loadRemainingRoutes();
+            }
+          });
+        },
+        error: (error) => {
+          console.error("Error updating bonus layover:", error);
+          this.errorBonuses =
+            error instanceof Error ? error.message : "Failed to update layover";
+        },
+      });
+    this.subscriptions.add(sub);
+  }
+
   updateActiveLegId(legId: number) {
     this.activeLegId = legId;
-    // Sequence: load routes first, then remaining routes
     this.loadRoutes().then(() => {
       if (this.currentLocation) {
         this.loadRemainingRoutes();
@@ -300,7 +364,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .filter((b) => b.Leg === this.activeLegId)
       .sort((a, b) => a.Ordinal - b.Ordinal);
     const index = legBonuses.findIndex((b) => b.BonusCode === bonus.BonusCode);
-    if (index <= 0) return; // Already at the top
+    if (index <= 0) return;
 
     const prevBonus = legBonuses[index - 1];
     this.swapBonuses(bonus, prevBonus);
@@ -311,7 +375,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .filter((b) => b.Leg === this.activeLegId)
       .sort((a, b) => a.Ordinal - b.Ordinal);
     const index = legBonuses.findIndex((b) => b.BonusCode === bonus.BonusCode);
-    if (index >= legBonuses.length - 1) return; // Already at the bottom
+    if (index >= legBonuses.length - 1) return;
 
     const nextBonus = legBonuses[index + 1];
     this.swapBonuses(bonus, nextBonus);
@@ -338,7 +402,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.notIncludedBonuses = this.bonuses
           .filter((b) => b.Include === false)
           .sort((a, b) => a.Ordinal - b.Ordinal);
-        // Sequence: load routes first, then remaining routes
         this.loadRoutes().then(() => {
           if (this.currentLocation) {
             this.loadRemainingRoutes();
@@ -397,7 +460,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getTotalTravelTime(): string {
     const totalMinutes = Math.round(
-      this.routes.reduce((sum, leg) => sum + leg.travelTimeMinutes, 0)
+      this.routes.reduce((sum, leg) => sum + leg.travelTimeMinutes, 0) +
+        this.includedBonuses
+          .filter((bonus) => bonus.Leg === this.activeLegId)
+          .reduce((sum, bonus) => sum + bonus.LayoverMinutes, 0)
     );
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -406,7 +472,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getRemainingTravelTime(): string {
     const totalMinutes = Math.round(
-      this.remainingRoutes.reduce((sum, leg) => sum + leg.travelTimeMinutes, 0)
+      this.remainingRoutes.reduce(
+        (sum, leg) => sum + leg.travelTimeMinutes,
+        0
+      ) +
+        this.sortedUnvisitedIncludedBonuses.reduce(
+          (sum, bonus) => sum + bonus.LayoverMinutes,
+          0
+        )
     );
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;

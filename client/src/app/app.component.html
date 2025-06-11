@@ -32,8 +32,7 @@
         (change)="updateBonusVisited(bonus, $event.target.checked)"
       />
       Visited
-      {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
-      {{ bonus.State }} -
+      {{ bonus.BonusName }} ({{ bonus.Points }} points)
       <a
         [href]="getGoogleMapsUrl(bonus)"
         target="_blank"
@@ -47,10 +46,27 @@
       </a>
       @if (getRouteForBonus(bonus)) {
       <span>
-        (From previous: {{ getRouteForBonus(bonus).travelTimeMinutes }} min,
-        {{ getRouteForBonus(bonus).distanceMiles }} miles)
+        (From previous:
+        {{ formatTime(getRouteForBonus(bonus).travelTimeMinutes) }},
+        {{ getRouteForBonus(bonus).distanceMiles }} miles | Running total:
+        {{
+          formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes)
+        }}
+        (incl. layovers),
+        {{ getRouteForBonus(bonus).runningDistanceMiles }} miles)
       </span>
       }
+      <span>
+        Layover:
+        <input
+          type="number"
+          min="0"
+          [(ngModel)]="bonus.LayoverMinutes"
+          (ngModelChange)="updateBonusLayover(bonus, $event)"
+          style="width: 60px"
+        />
+        min
+      </span>
       <button
         [disabled]="isUpButtonDisabled(bonus)"
         (click)="moveBonusUp(bonus)"
@@ -85,8 +101,7 @@
         [checked]="bonus.Include"
         (change)="updateBonusInclude(bonus, $event.target.checked)"
       />
-      {{ bonus.BonusName }} ({{ bonus.Points }} points) - {{ bonus.City }},
-      {{ bonus.State }} -
+      {{ bonus.BonusName }} ({{ bonus.Points }} points)
       <a
         [href]="getGoogleMapsUrl(bonus)"
         target="_blank"
