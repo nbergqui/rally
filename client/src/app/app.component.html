@@ -6,15 +6,12 @@
     fxLayoutGap="8px"
     fxLayoutAlign="start center"
   >
-    <span
-      >{{ activeLegId }} |
+    <span>
+      {{ activeLegId }} |
       {{ calculateTimeDifference(legs[activeLegId - 1]).timeDiff }} |
-      <span
-        [ngClass]="compareTimeToCheckpoint(legs[activeLegId - 1]).cssClass"
-        >{{
-          compareTimeToCheckpoint(legs[activeLegId - 1]).formattedDiff
-        }}</span
-      >
+      <span [ngClass]="compareTimeToCheckpoint(legs[activeLegId - 1]).cssClass">
+        {{ compareTimeToCheckpoint(legs[activeLegId - 1]).formattedDiff }}
+      </span>
     </span>
   </h1>
   <h2>
@@ -39,80 +36,118 @@
         [ngClass]="{ 'visited-green': bonus.Visited }"
       >
         <mat-panel-title>
-          {{ bonus.BonusCode }} - {{ bonus.BonusName }} - {{ bonus.Points }}p
+          {{ bonus.BonusCode }} | {{ bonus.BonusName }} | {{ bonus.Points }}p
         </mat-panel-title>
       </mat-expansion-panel-header>
       <div
         fxLayout="column"
         fxLayout.gt-sm="row"
-        fxLayoutAlign="start center"
-        fxLayoutGap="8px"
+        fxLayoutGap="20px"
         fxFlexWrap="wrap"
       >
-        <a
-          mat-flat-button
-          [href]="getGoogleMapsUrl(bonus)"
-          target="_blank"
-          rel="noopener noreferrer"
-          >Maps</a
+        <div fxLayout="row" fxLayout.gt-sm="row" fxFlexWrap="wrap">
+          <span class="route-details">
+            {{ bonus.Description }}
+          </span>
+        </div>
+        <div
+          fxLayout="row"
+          fxLayout.gt-sm="row"
+          fxLayoutGap="20px"
+          fxFlexWrap="wrap"
+          class="margin-top-20"
         >
-        <a
-          mat-flat-button
-          [href]="getWazeUrl(bonus)"
-          target="_blank"
-          rel="noopener noreferrer"
-          >Waze</a
+          <a
+            mat-flat-button
+            fxFlex="1 1 50%"
+            [href]="getGoogleMapsUrl(bonus)"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Maps</a
+          >
+          <a
+            mat-flat-button
+            fxFlex="1 1 50%"
+            [href]="getWazeUrl(bonus)"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Waze</a
+          >
+          <mat-slide-toggle
+            fxFlex
+            [(ngModel)]="bonus.Visited"
+            (ngModelChange)="updateBonusVisited(bonus, $event)"
+            >Visited</mat-slide-toggle
+          >
+        </div>
+        <div
+          fxLayout="row"
+          fxLayout.gt-sm="row"
+          fxLayoutGap="20px"
+          fxFlexWrap="wrap"
+          class="margin-top-20"
         >
-        <mat-slide-toggle
-          [(ngModel)]="bonus.Visited"
-          (ngModelChange)="updateBonusVisited(bonus, $event)"
-          >Visited</mat-slide-toggle
+          @if (getRouteForBonus(bonus)) {
+          <span class="route-details">
+            ETA:
+            {{
+              calculateEta(
+                calculateTimeDifference(legs[activeLegId - 1]).referenceTime,
+                getRouteForBonus(bonus).runningTravelTimeMinutes
+              )
+            }}
+            <br />
+            From previous:
+            {{ formatTime(getRouteForBonus(bonus).travelTimeMinutes) }},
+            {{ getRouteForBonus(bonus).distanceMiles }}m
+            <br />
+            Running total:
+            {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }}
+            (incl. layovers),
+            {{ getRouteForBonus(bonus).runningDistanceMiles }}m
+          </span>
+          }
+        </div>
+        <div
+          fxLayout="row"
+          fxLayout.gt-sm="row"
+          fxLayoutGap="20px"
+          fxFlexWrap="wrap"
+          class="margin-top-20"
         >
-        @if (getRouteForBonus(bonus)) {
-        <span class="route-details">
-          (From previous:
-          {{ formatTime(getRouteForBonus(bonus).travelTimeMinutes) }},
-          {{ getRouteForBonus(bonus).distanceMiles }} miles | Running total:
-          {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }}
-          (incl. layovers),
-          {{ getRouteForBonus(bonus).runningDistanceMiles }} miles | ETA:
-          {{
-            calculateEta(
-              calculateTimeDifference(legs[activeLegId - 1]).referenceTime,
-              getRouteForBonus(bonus).runningTravelTimeMinutes
-            )
-          }})
-        </span>
-        }
-        <mat-form-field appearance="outline" fxFlex="100px">
-          <mat-label>Layover (min)</mat-label>
-          <input
-            matInput
-            type="number"
-            min="0"
-            [(ngModel)]="bonus.LayoverMinutes"
-            (ngModelChange)="updateBonusLayover(bonus, $event)"
-          />
-        </mat-form-field>
-        <mat-slide-toggle
-          [(ngModel)]="bonus.Include"
-          (ngModelChange)="updateBonusInclude(bonus, $event)"
-          >Include</mat-slide-toggle
-        >
-        <button
-          mat-icon-button
-          [disabled]="isUpButtonDisabled(bonus)"
-          (click)="moveBonusUp(bonus)"
-        >
-          <mat-icon>arrow_upward</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          [disabled]="isDownButtonDisabled(bonus)"
-          (click)="moveBonusDown(bonus)"
-        >
-          <mat-icon>arrow_downward</mat-icon>
-        </button>
+          <mat-form-field appearance="outline" fxFlex="1 1 25%">
+            <mat-label>Layover</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              [(ngModel)]="bonus.LayoverMinutes"
+              (ngModelChange)="updateBonusLayover(bonus, $event)"
+            />
+          </mat-form-field>
+          <button
+            mat-icon-button
+            fxFlex="1 1 25%"
+            [disabled]="isUpButtonDisabled(bonus)"
+            (click)="moveBonusUp(bonus)"
+          >
+            <mat-icon>arrow_upward</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            fxFlex="1 1 25%"
+            [disabled]="isDownButtonDisabled(bonus)"
+            (click)="moveBonusDown(bonus)"
+          >
+            <mat-icon>arrow_downward</mat-icon>
+          </button>
+          <mat-slide-toggle
+            fxFlex="1 1 25%"
+            [(ngModel)]="bonus.Include"
+            (ngModelChange)="updateBonusInclude(bonus, $event)"
+            >Include</mat-slide-toggle
+          >
+        </div>
       </div>
     </mat-expansion-panel>
     } } @else {
@@ -131,34 +166,36 @@
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>
-          {{ bonus.BonusCode }} - {{ bonus.BonusName }} ({{ bonus.Points }}
-          points)
+          {{ bonus.BonusCode }} | {{ bonus.BonusName }} | {{ bonus.Points }}p
         </mat-panel-title>
       </mat-expansion-panel-header>
       <div
         fxLayout="row"
-        fxLayoutAlign="start center"
-        fxLayoutGap="8px"
+        fxLayout.gt-sm="row"
+        fxLayoutGap="20px"
         fxFlexWrap="wrap"
       >
-        <mat-checkbox
-          [(ngModel)]="bonus.Include"
-          (ngModelChange)="updateBonusInclude(bonus, $event)"
-          >Include</mat-checkbox
-        >
         <a
-          mat-button
+          mat-flat-button
+          fxFlex="1 1 50%"
           [href]="getGoogleMapsUrl(bonus)"
           target="_blank"
           rel="noopener noreferrer"
           >Maps</a
         >
         <a
-          mat-button
+          mat-flat-button
+          fxFlex="1 1 50%"
           [href]="getWazeUrl(bonus)"
           target="_blank"
           rel="noopener noreferrer"
           >Waze</a
+        >
+        <mat-slide-toggle
+          fxFlex
+          [(ngModel)]="bonus.Include"
+          (ngModelChange)="updateBonusInclude(bonus, $event)"
+          >Include</mat-slide-toggle
         >
       </div>
     </mat-expansion-panel>
