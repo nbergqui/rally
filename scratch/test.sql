@@ -43,7 +43,7 @@ select * from RallyLeg;
 update RallyLeg set CheckpointTime = '2025-06-27 17:00:00'
 where Leg = 3
 
-update RallyLeg set StartTime = '2025-06-11 17:00:00.000'
+update RallyLeg set StartTime = '2025-06-16 17:00:00.000'
 where Leg = 1
 
 

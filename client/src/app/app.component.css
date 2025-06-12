@@ -26,3 +26,9 @@ label {
   align-items: center;
   gap: 0.5rem;
 }
+.positive {
+  color: green;
+}
+.negative {
+  color: red;
+}

@@ -346,9 +346,9 @@ export class AppComponent implements OnInit, OnDestroy {
           this.includedBonuses = this.bonuses
             .filter((b) => b.Include === true)
             .sort((a, b) => a.Ordinal - b.Ordinal);
-          this.notIncludedBonuses = this.bonuses
-            .filter((b) => b.Include === false)
-            .sort((a, b) => a.Ordinal - b.Ordinal);
+          this.notIncludedBonuses = this.bonuses.filter(
+            (b) => b.Include === false
+          );
           this.loadRoutes().then(() => {
             if (this.currentLocation) {
               this.loadRemainingRoutes();
@@ -413,9 +413,9 @@ export class AppComponent implements OnInit, OnDestroy {
         this.includedBonuses = this.bonuses
           .filter((b) => b.Include === true)
           .sort((a, b) => a.Ordinal - b.Ordinal);
-        this.notIncludedBonuses = this.bonuses
-          .filter((b) => b.Include === false)
-          .sort((a, b) => a.Ordinal - b.Ordinal);
+        this.notIncludedBonuses = this.bonuses.filter(
+          (b) => b.Include === false
+        );
         this.loadRoutes().then(() => {
           if (this.currentLocation) {
             this.loadRemainingRoutes();
@@ -465,6 +465,44 @@ export class AppComponent implements OnInit, OnDestroy {
     const hours = Math.floor(timeDiffMs / (1000 * 60 * 60));
     const minutes = Math.floor((timeDiffMs / (1000 * 60)) % 60);
     return { timeDiff: `${hours}h ${minutes}m`, referenceTime };
+  }
+
+  compareTimeToCheckpoint(leg: Leg): {
+    formattedDiff: string;
+    cssClass: string;
+  } {
+    // Parse time to checkpoint (from calculateTimeDifference)
+    const checkpointDiff = this.calculateTimeDifference(leg).timeDiff;
+    const [checkpointHours, checkpointMinutes] = checkpointDiff
+      .split("h ")
+      .map((part, index) =>
+        parseInt(index === 1 ? part.replace("m", "") : part, 10)
+      );
+    const checkpointTotalMinutes = checkpointHours * 60 + checkpointMinutes;
+
+    // Parse remaining travel time (from getRemainingTravelTime)
+    const remainingTime = this.getRemainingTravelTime();
+    const [remainingHours, remainingMinutes] = remainingTime
+      .split("h ")
+      .map((part, index) =>
+        parseInt(index === 1 ? part.replace("m", "") : part, 10)
+      );
+    const remainingTotalMinutes = remainingHours * 60 + remainingMinutes;
+
+    // Calculate difference (checkpoint - remaining)
+    const diffMinutes = checkpointTotalMinutes - remainingTotalMinutes;
+    const absDiffMinutes = Math.abs(diffMinutes);
+    const diffHours = Math.floor(absDiffMinutes / 60);
+    const diffMins = absDiffMinutes % 60;
+
+    // Format and style
+    const sign = diffMinutes >= 0 ? "+" : "-";
+    const formattedDiff = `${sign}${diffHours
+      .toString()
+      .padStart(2, "0")}h ${diffMins.toString().padStart(2, "0")}m`;
+    const cssClass = diffMinutes >= 0 ? "positive" : "negative";
+
+    return { formattedDiff, cssClass };
   }
 
   getTotalIncludedPoints(): number {

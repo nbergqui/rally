@@ -3,7 +3,16 @@
   Leg: {{ activeLegId }} | Start:
   {{ formatUtcToLocal(legs[activeLegId - 1].StartTime) }} | Checkpoint:
   {{ formatUtcToLocal(legs[activeLegId - 1].CheckpointTime) }} | Time to
-  Checkpoint: {{ calculateTimeDifference(legs[activeLegId - 1]).timeDiff }}
+  Checkpoint: {{ calculateTimeDifference(legs[activeLegId - 1]).timeDiff }} |
+  Time Margin:
+  <span
+    [style.color]="
+      compareTimeToCheckpoint(legs[activeLegId - 1]).cssClass === 'positive'
+        ? 'green'
+        : 'red'
+    "
+    >{{ compareTimeToCheckpoint(legs[activeLegId - 1]).formattedDiff }}</span
+  >
 </h1>
 <h2>
   Remaining: {{ getRemainingTravelDistance() }}m |
@@ -52,9 +61,7 @@
         (From previous:
         {{ formatTime(getRouteForBonus(bonus).travelTimeMinutes) }},
         {{ getRouteForBonus(bonus).distanceMiles }} miles | Running total:
-        {{
-          formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes)
-        }}
+        {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }}
         (incl. layovers),
         {{ getRouteForBonus(bonus).runningDistanceMiles }} miles | ETA:
         {{
