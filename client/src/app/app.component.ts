@@ -123,9 +123,9 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     return {
-      distanceMiles: route.distanceMiles,
+      distanceMiles: Math.round(route.distanceMiles),
       travelTimeMinutes: route.travelTimeMinutes,
-      runningDistanceMiles: Number(runningDistanceMiles.toFixed(2)),
+      runningDistanceMiles: Number(runningDistanceMiles.toFixed(0)),
       runningTravelTimeMinutes: Number(runningTravelTimeMinutes.toFixed(2)),
     };
   }

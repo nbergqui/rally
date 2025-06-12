@@ -49,23 +49,17 @@
           {{ bonus.BonusCode }} | {{ bonus.BonusName }} | {{ bonus.Points }}p
         </mat-panel-title>
       </mat-expansion-panel-header>
-      <div
-        fxLayout="column"
-        fxLayout.gt-sm="row"
-        fxLayoutGap="20px"
-        fxFlexWrap="wrap"
-      >
-        <div fxLayout="row" fxLayout.gt-sm="row" fxFlexWrap="wrap">
+      <div fxLayout="column" fxFlexWrap="wrap">
+        <div fxLayout="row" fxFlexWrap="wrap">
           <span class="route-details">
             {{ bonus.Description }}
           </span>
         </div>
         <div
           fxLayout="row"
-          fxLayout.gt-sm="row"
-          fxLayoutGap="20px"
           fxFlexWrap="wrap"
-          class="margin-top-20"
+          fxLayoutGap="20px"
+          class="margin-top-30"
         >
           <a
             mat-flat-button
@@ -90,13 +84,7 @@
             >Visited</mat-slide-toggle
           >
         </div>
-        <div
-          fxLayout="row"
-          fxLayout.gt-sm="row"
-          fxLayoutGap="20px"
-          fxFlexWrap="wrap"
-          class="margin-top-20"
-        >
+        <div fxLayout="row" fxFlexWrap="wrap" class="margin-top-30">
           @if (getRouteForBonus(bonus)) {
           <span class="route-details">
             ETA:
@@ -119,10 +107,9 @@
         </div>
         <div
           fxLayout="row"
-          fxLayout.gt-sm="row"
-          fxLayoutGap="20px"
           fxFlexWrap="wrap"
-          class="margin-top-20"
+          fxLayoutGap="20px"
+          class="margin-top-30"
         >
           <mat-form-field appearance="outline" fxFlex="1 1 40%">
             <mat-label>Layover</mat-label>
