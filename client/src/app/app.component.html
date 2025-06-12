@@ -14,17 +14,27 @@
       </span>
     </span>
   </h1>
-  <h2>
-    Remaining: {{ getRemainingTravelDistance() }}m |
-    {{ getRemainingTravelTime() }} | {{ getRemainingPoints() }}p
+  <h2
+    fxLayout="column"
+    fxLayout.gt-sm="row"
+    fxLayoutGap="8px"
+    fxLayoutAlign="start center"
+  >
+    R | {{ getRemainingTravelDistance() }}m | {{ getRemainingTravelTime() }} |
+    {{ getRemainingPoints() }}p
   </h2>
-  <h2>
-    Total: {{ getTotalTravelDistance() }}m | {{ getTotalTravelTime() }} |
+  <h2
+    fxLayout="column"
+    fxLayout.gt-sm="row"
+    fxLayoutGap="8px"
+    fxLayoutAlign="start center"
+  >
+    T | {{ getTotalTravelDistance() }}m | {{ getTotalTravelTime() }} |
     {{ getTotalIncludedPoints() }}p
   </h2>
   }
 
-  <h2>Included: {{ sortedIncludedBonuses.length }}</h2>
+  <h3>Included: {{ sortedIncludedBonuses.length }}</h3>
   @if (isLoadingBonuses) {
   <div>Loading bonuses...</div>
   } @else {
@@ -102,8 +112,7 @@
             {{ getRouteForBonus(bonus).distanceMiles }}m
             <br />
             Running total:
-            {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }}
-            (incl. layovers),
+            {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }},
             {{ getRouteForBonus(bonus).runningDistanceMiles }}m
           </span>
           }
@@ -115,7 +124,7 @@
           fxFlexWrap="wrap"
           class="margin-top-20"
         >
-          <mat-form-field appearance="outline" fxFlex="1 1 25%">
+          <mat-form-field appearance="outline" fxFlex="1 1 40%">
             <mat-label>Layover</mat-label>
             <input
               matInput
@@ -127,7 +136,7 @@
           </mat-form-field>
           <button
             mat-icon-button
-            fxFlex="1 1 25%"
+            fxFlex="1 1 15%"
             [disabled]="isUpButtonDisabled(bonus)"
             (click)="moveBonusUp(bonus)"
           >
@@ -135,14 +144,14 @@
           </button>
           <button
             mat-icon-button
-            fxFlex="1 1 25%"
+            fxFlex="1 1 15%"
             [disabled]="isDownButtonDisabled(bonus)"
             (click)="moveBonusDown(bonus)"
           >
             <mat-icon>arrow_downward</mat-icon>
           </button>
           <mat-slide-toggle
-            fxFlex="1 1 25%"
+            fxFlex="1 1 30%"
             [(ngModel)]="bonus.Include"
             (ngModelChange)="updateBonusInclude(bonus, $event)"
             >Include</mat-slide-toggle
@@ -156,7 +165,7 @@
   </mat-accordion>
   }
 
-  <h2>Available: {{ sortedNotIncludedBonuses.length }}</h2>
+  <h3>Available: {{ sortedNotIncludedBonuses.length }}</h3>
   @if (isLoadingBonuses) {
   <div>Loading bonuses...</div>
   } @else {
@@ -205,7 +214,7 @@
   </mat-accordion>
   }
 
-  <h2>Settings</h2>
+  <h3>Settings</h3>
   <div fxLayout="column" fxLayoutGap="8px">Active Leg</div>
   @if (!isLoadingLegs) {
   <mat-radio-group
