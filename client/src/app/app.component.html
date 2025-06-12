@@ -1,151 +1,186 @@
-@if (!isLoadingLegs) {
-<h1>
-  Leg: {{ activeLegId }} | Start:
-  {{ formatUtcToLocal(legs[activeLegId - 1].StartTime) }} | Checkpoint:
-  {{ formatUtcToLocal(legs[activeLegId - 1].CheckpointTime) }} | Time to
-  Checkpoint: {{ calculateTimeDifference(legs[activeLegId - 1]).timeDiff }} |
-  Time Margin:
-  <span
-    [style.color]="
-      compareTimeToCheckpoint(legs[activeLegId - 1]).cssClass === 'positive'
-        ? 'green'
-        : 'red'
-    "
-    >{{ compareTimeToCheckpoint(legs[activeLegId - 1]).formattedDiff }}</span
+<div fxLayout="column" fxLayoutGap="16px" class="container">
+  @if (!isLoadingLegs) {
+  <h1
+    fxLayout="column"
+    fxLayout.gt-sm="row"
+    fxLayoutGap="8px"
+    fxLayoutAlign="start center"
   >
-</h1>
-<h2>
-  Remaining: {{ getRemainingTravelDistance() }}m |
-  {{ getRemainingTravelTime() }} | {{ getRemainingPoints() }}p
-</h2>
-<h2>
-  Total: {{ getTotalTravelDistance() }}m | {{ getTotalTravelTime() }} |
-  {{ getTotalIncludedPoints() }}p
-</h2>
-}
-
-<h2>Included: {{ sortedIncludedBonuses.length }}</h2>
-@if (isLoadingBonuses) {
-<div>Loading bonuses...</div>
-} @if (!isLoadingBonuses) {
-<ul>
-  @if (sortedIncludedBonuses.length) { @for (bonus of sortedIncludedBonuses;
-  track bonus.BonusCode) {
-  <li>
-    <label>
-      <input
-        type="checkbox"
-        [checked]="bonus.Include"
-        (change)="updateBonusInclude(bonus, $event.target.checked)"
-      />
-      <input
-        type="checkbox"
-        [checked]="bonus.Visited"
-        (change)="updateBonusVisited(bonus, $event.target.checked)"
-      />
-      Visited
-      {{ bonus.BonusName }} ({{ bonus.Points }} points)
-      <a
-        [href]="getGoogleMapsUrl(bonus)"
-        target="_blank"
-        rel="noopener noreferrer"
+    <span
+      >{{ activeLegId }} |
+      {{ calculateTimeDifference(legs[activeLegId - 1]).timeDiff }} |
+      <span
+        [ngClass]="compareTimeToCheckpoint(legs[activeLegId - 1]).cssClass"
+        >{{
+          compareTimeToCheckpoint(legs[activeLegId - 1]).formattedDiff
+        }}</span
       >
-        Maps
-      </a>
-      |
-      <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
-        Waze
-      </a>
-      @if (getRouteForBonus(bonus)) {
-      <span>
-        (From previous:
-        {{ formatTime(getRouteForBonus(bonus).travelTimeMinutes) }},
-        {{ getRouteForBonus(bonus).distanceMiles }} miles | Running total:
-        {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }}
-        (incl. layovers),
-        {{ getRouteForBonus(bonus).runningDistanceMiles }} miles | ETA:
-        {{
-          calculateEta(
-            calculateTimeDifference(legs[activeLegId - 1]).referenceTime,
-            getRouteForBonus(bonus).runningTravelTimeMinutes
-          )
-        }})
-      </span>
-      }
-      <span>
-        Layover:
-        <input
-          type="number"
-          min="0"
-          [(ngModel)]="bonus.LayoverMinutes"
-          (ngModelChange)="updateBonusLayover(bonus, $event)"
-          style="width: 60px"
-        />
-        min
-      </span>
-      <button
-        [disabled]="isUpButtonDisabled(bonus)"
-        (click)="moveBonusUp(bonus)"
-      >
-        ↑
-      </button>
-      <button
-        [disabled]="isDownButtonDisabled(bonus)"
-        (click)="moveBonusDown(bonus)"
-      >
-        ↓
-      </button>
-    </label>
-  </li>
-  } } @else {
-  <p>No included bonuses available.</p>
+    </span>
+  </h1>
+  <h2>
+    Remaining: {{ getRemainingTravelDistance() }}m |
+    {{ getRemainingTravelTime() }} | {{ getRemainingPoints() }}p
+  </h2>
+  <h2>
+    Total: {{ getTotalTravelDistance() }}m | {{ getTotalTravelTime() }} |
+    {{ getTotalIncludedPoints() }}p
+  </h2>
   }
-</ul>
-}
 
-<h2>Available: {{ sortedNotIncludedBonuses.length }}</h2>
-@if (isLoadingBonuses) {
-<div>Loading bonuses...</div>
-} @if (!isLoadingBonuses) {
-<ul>
-  @if (sortedNotIncludedBonuses.length) { @for (bonus of
-  sortedNotIncludedBonuses; track bonus.BonusCode) {
-  <li>
-    <label>
-      <input
-        type="checkbox"
-        [checked]="bonus.Include"
-        (change)="updateBonusInclude(bonus, $event.target.checked)"
-      />
-      {{ bonus.BonusName }} ({{ bonus.Points }} points)
-      <a
-        [href]="getGoogleMapsUrl(bonus)"
-        target="_blank"
-        rel="noopener noreferrer"
+  <h2>Included: {{ sortedIncludedBonuses.length }}</h2>
+  @if (isLoadingBonuses) {
+  <div>Loading bonuses...</div>
+  } @else {
+  <mat-accordion multi="true">
+    @if (sortedIncludedBonuses.length) { @for (bonus of sortedIncludedBonuses;
+    track bonus.BonusCode) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header
+        [ngClass]="{ 'visited-green': bonus.Visited }"
       >
-        Maps
-      </a>
-      |
-      <a [href]="getWazeUrl(bonus)" target="_blank" rel="noopener noreferrer">
-        Waze
-      </a>
-    </label>
-  </li>
-  } } @else {
-  <p>No not included bonuses available.</p>
+        <mat-panel-title>
+          {{ bonus.BonusCode }} - {{ bonus.BonusName }} - {{ bonus.Points }}p
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <div
+        fxLayout="column"
+        fxLayout.gt-sm="row"
+        fxLayoutAlign="start center"
+        fxLayoutGap="8px"
+        fxFlexWrap="wrap"
+      >
+        <a
+          mat-flat-button
+          [href]="getGoogleMapsUrl(bonus)"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Maps</a
+        >
+        <a
+          mat-flat-button
+          [href]="getWazeUrl(bonus)"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Waze</a
+        >
+        <mat-slide-toggle
+          [(ngModel)]="bonus.Visited"
+          (ngModelChange)="updateBonusVisited(bonus, $event)"
+          >Visited</mat-slide-toggle
+        >
+        @if (getRouteForBonus(bonus)) {
+        <span class="route-details">
+          (From previous:
+          {{ formatTime(getRouteForBonus(bonus).travelTimeMinutes) }},
+          {{ getRouteForBonus(bonus).distanceMiles }} miles | Running total:
+          {{ formatTime(getRouteForBonus(bonus).runningTravelTimeMinutes) }}
+          (incl. layovers),
+          {{ getRouteForBonus(bonus).runningDistanceMiles }} miles | ETA:
+          {{
+            calculateEta(
+              calculateTimeDifference(legs[activeLegId - 1]).referenceTime,
+              getRouteForBonus(bonus).runningTravelTimeMinutes
+            )
+          }})
+        </span>
+        }
+        <mat-form-field appearance="outline" fxFlex="100px">
+          <mat-label>Layover (min)</mat-label>
+          <input
+            matInput
+            type="number"
+            min="0"
+            [(ngModel)]="bonus.LayoverMinutes"
+            (ngModelChange)="updateBonusLayover(bonus, $event)"
+          />
+        </mat-form-field>
+        <mat-slide-toggle
+          [(ngModel)]="bonus.Include"
+          (ngModelChange)="updateBonusInclude(bonus, $event)"
+          >Include</mat-slide-toggle
+        >
+        <button
+          mat-icon-button
+          [disabled]="isUpButtonDisabled(bonus)"
+          (click)="moveBonusUp(bonus)"
+        >
+          <mat-icon>arrow_upward</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [disabled]="isDownButtonDisabled(bonus)"
+          (click)="moveBonusDown(bonus)"
+        >
+          <mat-icon>arrow_downward</mat-icon>
+        </button>
+      </div>
+    </mat-expansion-panel>
+    } } @else {
+    <p>No included bonuses available.</p>
+    }
+  </mat-accordion>
   }
-</ul>
-}
 
-<h2>Settings</h2>
-<div>Active Leg</div>
-@if (!isLoadingLegs) {
-<div>
-  @for (leg of legs; track leg.Leg) {
-  <label>
-    <input type="radio" [value]="leg.Leg" [(ngModel)]="activeLegId" />
-    Leg {{ leg.Leg }}
-  </label>
+  <h2>Available: {{ sortedNotIncludedBonuses.length }}</h2>
+  @if (isLoadingBonuses) {
+  <div>Loading bonuses...</div>
+  } @else {
+  <mat-accordion>
+    @if (sortedNotIncludedBonuses.length) { @for (bonus of
+    sortedNotIncludedBonuses; track bonus.BonusCode) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ bonus.BonusCode }} - {{ bonus.BonusName }} ({{ bonus.Points }}
+          points)
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <div
+        fxLayout="row"
+        fxLayoutAlign="start center"
+        fxLayoutGap="8px"
+        fxFlexWrap="wrap"
+      >
+        <mat-checkbox
+          [(ngModel)]="bonus.Include"
+          (ngModelChange)="updateBonusInclude(bonus, $event)"
+          >Include</mat-checkbox
+        >
+        <a
+          mat-button
+          [href]="getGoogleMapsUrl(bonus)"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Maps</a
+        >
+        <a
+          mat-button
+          [href]="getWazeUrl(bonus)"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Waze</a
+        >
+      </div>
+    </mat-expansion-panel>
+    } } @else {
+    <p>No not included bonuses available.</p>
+    }
+  </mat-accordion>
+  }
+
+  <h2>Settings</h2>
+  <div fxLayout="column" fxLayoutGap="8px">Active Leg</div>
+  @if (!isLoadingLegs) {
+  <mat-radio-group
+    [(ngModel)]="activeLegId"
+    fxLayout="row wrap"
+    fxLayoutGap="8px"
+  >
+    @for (leg of legs; track leg.Leg) {
+    <mat-radio-button [value]="leg.Leg" (change)="updateActiveLegId(leg.Leg)"
+      >Leg {{ leg.Leg }}</mat-radio-button
+    >
+    }
+  </mat-radio-group>
   }
 </div>
-}

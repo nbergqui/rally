@@ -1,15 +1,37 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { DatePipe } from "@angular/common";
+import { CommonModule, DatePipe } from "@angular/common";
 import { Subscription } from "rxjs";
 import { ApiService } from "./services/api.service";
 import { Bonus } from "./models/bonus.model";
 import { Leg } from "./models/leg.model";
+import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatButtonModule } from "@angular/material/button";
+import { MatInputModule } from "@angular/material/input";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatRadioModule } from "@angular/material/radio";
+import { MatExpansionModule } from "@angular/material/expansion";
+import { MatIconModule } from "@angular/material/icon";
+import { MatSlideToggleModule } from "@angular/material/slide-toggle";
+import { FlexLayoutModule } from "@angular/flex-layout";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [
+    FormsModule,
+    CommonModule,
+    DatePipe,
+    MatCheckboxModule,
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatRadioModule,
+    MatExpansionModule,
+    MatIconModule,
+    MatSlideToggleModule,
+    FlexLayoutModule,
+  ],
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.css"],
 })

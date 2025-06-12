@@ -7,10 +7,13 @@
     "build": "ng build --output-path=../dist"
   },
   "dependencies": {
-    "@angular/core": "^19.0.0",
+    "@angular/cdk": "^19.2.18",
     "@angular/common": "^19.0.0",
     "@angular/compiler": "^19.0.0",
+    "@angular/core": "^19.0.0",
+    "@angular/flex-layout": "^15.0.0-beta.42",
     "@angular/forms": "^19.0.0",
+    "@angular/material": "^19.2.18",
     "@angular/platform-browser": "^19.0.0",
     "@angular/platform-browser-dynamic": "^19.0.0",
     "rxjs": "~7.8.0",
