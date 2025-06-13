@@ -48,6 +48,10 @@ class MapsService {
         return data;
       }
 
+      console.log(
+        `Fetching drive time from Azure Maps for coordinates: ${startLat},${startLon} to ${endLat},${endLon}`
+      );
+
       // Call Azure Maps API
       const response = await axios.get(this.baseUrl, {
         params: {

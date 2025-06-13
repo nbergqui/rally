@@ -100,32 +100,56 @@ export class AppComponent implements OnInit, OnDestroy {
     runningTravelTimeMinutes: number;
   } | null {
     if (!bonus.Latitude || !bonus.Longitude) return null;
-    const route = this.routes.find((r) => r.toBonusCode === bonus.BonusCode);
-    if (!route) return null;
 
-    const bonusIndex = this.sortedIncludedBonuses.findIndex(
+    const unvisitedBonuses = this.sortedUnvisitedIncludedBonuses;
+    const bonusIndex = unvisitedBonuses.findIndex(
       (b) => b.BonusCode === bonus.BonusCode
     );
     if (bonusIndex === -1) return null;
 
+    // Get the route for the current bonus
+    let route;
+    if (bonusIndex === 0 && this.currentLocation) {
+      // First unvisited bonus: use remainingRoutes from current location
+      route = this.remainingRoutes.find(
+        (r) => r.toBonusCode === bonus.BonusCode
+      );
+    } else {
+      // Subsequent bonuses: use routes between bonuses
+      route = this.routes.find((r) => r.toBonusCode === bonus.BonusCode);
+    }
+    if (!route) return null;
+
     let runningDistanceMiles = 0;
     let runningTravelTimeMinutes = 0;
-    for (let i = 0; i < bonusIndex; i++) {
-      const prevRoute = this.routes.find(
-        (r) => r.toBonusCode === this.sortedIncludedBonuses[i + 1].BonusCode
-      );
-      if (prevRoute) {
-        runningDistanceMiles += prevRoute.distanceMiles;
-        runningTravelTimeMinutes +=
-          prevRoute.travelTimeMinutes +
-          this.sortedIncludedBonuses[i].LayoverMinutes;
+
+    // Accumulate travel and layover for unvisited bonuses up to and including the current bonus
+    for (let i = 0; i <= bonusIndex; i++) {
+      const currentBonus = unvisitedBonuses[i];
+      let currentRoute;
+      if (i === 0 && this.currentLocation) {
+        currentRoute = this.remainingRoutes.find(
+          (r) => r.toBonusCode === currentBonus.BonusCode
+        );
+      } else {
+        currentRoute = this.routes.find(
+          (r) => r.toBonusCode === currentBonus.BonusCode
+        );
+      }
+      if (currentRoute) {
+        runningDistanceMiles += currentRoute.distanceMiles;
+        runningTravelTimeMinutes += currentRoute.travelTimeMinutes;
+      }
+      // Add layover time of the current bonus (except for the last one in the loop)
+      if (i < bonusIndex) {
+        runningTravelTimeMinutes += currentBonus.LayoverMinutes || 0;
       }
     }
 
     return {
       distanceMiles: Math.round(route.distanceMiles),
       travelTimeMinutes: route.travelTimeMinutes,
-      runningDistanceMiles: Number(runningDistanceMiles.toFixed(0)),
+      runningDistanceMiles: Math.round(runningDistanceMiles),
       runningTravelTimeMinutes: Number(runningTravelTimeMinutes.toFixed(2)),
     };
   }
@@ -140,7 +164,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   formatUtcToLocal(utcDate: string): string {
     const date = new Date(utcDate);
-    return date.toLocaleString(); // Uses browser's local timezone
+    return date.toLocaleString();
   }
 
   calculateEta(
@@ -151,7 +175,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const eta = new Date(
       refTime.getTime() + runningTravelTimeMinutes * 60 * 1000
     );
-    return eta.toLocaleString(); // Local time
+    return eta.toLocaleString();
   }
 
   loadCurrentLocation() {
@@ -493,7 +517,6 @@ export class AppComponent implements OnInit, OnDestroy {
     formattedDiff: string;
     cssClass: string;
   } {
-    // Parse time to checkpoint (from calculateTimeDifference)
     const checkpointDiff = this.calculateTimeDifference(leg).timeDiff;
     const [checkpointHours, checkpointMinutes] = checkpointDiff
       .split("h ")
@@ -502,7 +525,6 @@ export class AppComponent implements OnInit, OnDestroy {
       );
     const checkpointTotalMinutes = checkpointHours * 60 + checkpointMinutes;
 
-    // Parse remaining travel time (from getRemainingTravelTime)
     const remainingTime = this.getRemainingTravelTime();
     const [remainingHours, remainingMinutes] = remainingTime
       .split("h ")
@@ -511,13 +533,11 @@ export class AppComponent implements OnInit, OnDestroy {
       );
     const remainingTotalMinutes = remainingHours * 60 + remainingMinutes;
 
-    // Calculate difference (checkpoint - remaining)
     const diffMinutes = checkpointTotalMinutes - remainingTotalMinutes;
     const absDiffMinutes = Math.abs(diffMinutes);
     const diffHours = Math.floor(absDiffMinutes / 60);
     const diffMins = absDiffMinutes % 60;
 
-    // Format and style
     const sign = diffMinutes >= 0 ? "+" : "-";
     const formattedDiff = `${sign}${diffHours
       .toString()

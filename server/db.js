@@ -316,8 +316,8 @@ class DatabaseService {
           AND EndLongitude = @EndLon
       `,
         {
-          StartLat: startLat,
-          StartLon: startLon,
+          StartLat: Math.round(startLat * 1000000) / 1000000,
+          StartLon: Math.round(startLon * 1000000) / 1000000,
           EndLat: endLat,
           EndLon: endLon,
         }
@@ -332,6 +332,9 @@ class DatabaseService {
   }
 
   async cacheRoute(startLat, startLon, endLat, endLon, responseJson) {
+    startLat = Math.round(startLat * 1000000) / 1000000; // Round to 4 decimal places
+    startLon = Math.round(startLon * 1000000) / 1000000; // Round to 4 decimal places
+
     try {
       await this.query(
         `
