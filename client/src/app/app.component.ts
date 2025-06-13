@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { CommonModule, DatePipe } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import { Subscription } from "rxjs";
 import { ApiService } from "./services/api.service";
 import { Bonus } from "./models/bonus.model";
@@ -21,7 +21,6 @@ import { FlexLayoutModule } from "@angular/flex-layout";
   imports: [
     FormsModule,
     CommonModule,
-    DatePipe,
     MatCheckboxModule,
     MatButtonModule,
     MatInputModule,
@@ -84,7 +83,7 @@ export class AppComponent implements OnInit, OnDestroy {
   get sortedNotIncludedBonuses(): Bonus[] {
     return this.notIncludedBonuses
       .filter((bonus) => bonus.Leg === this.activeLegId)
-      .sort((a, b) => a.Ordinal - b.Ordinal);
+      .sort((a, b) => a.BonusCode.localeCompare(b.BonusCode));
   }
 
   get sortedUnvisitedIncludedBonuses(): Bonus[] {
@@ -227,11 +226,11 @@ export class AppComponent implements OnInit, OnDestroy {
         this.bonuses = [...bonuses].sort((a, b) => a.Ordinal - b.Ordinal);
         this.bonusCount = bonuses.length;
         this.includedBonuses = bonuses
-          .filter((bonus) => bonus.Include === true)
+          .filter((b) => b.Include === true)
           .sort((a, b) => a.Ordinal - b.Ordinal);
         this.notIncludedBonuses = bonuses
-          .filter((bonus) => bonus.Include === false)
-          .sort((a, b) => a.Ordinal - b.Ordinal);
+          .filter((b) => b.Include === false)
+          .sort((a, b) => a.BonusCode.localeCompare(b.BonusCode));
         this.bonusesLoaded = true;
         this.loadRoutes().then(() => {
           if (this.currentLocation) {
@@ -329,7 +328,7 @@ export class AppComponent implements OnInit, OnDestroy {
             .sort((a, b) => a.Ordinal - b.Ordinal);
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
-            .sort((a, b) => a.Ordinal - b.Ordinal);
+            .sort((a, b) => a.BonusCode.localeCompare(b.BonusCode));
           this.loadRoutes().then(() => {
             if (this.currentLocation) {
               this.loadRemainingRoutes();
@@ -361,7 +360,7 @@ export class AppComponent implements OnInit, OnDestroy {
             .sort((a, b) => a.Ordinal - b.Ordinal);
           this.notIncludedBonuses = this.bonuses
             .filter((b) => b.Include === false)
-            .sort((a, b) => a.Ordinal - b.Ordinal);
+            .sort((a, b) => a.BonusCode.localeCompare(b.BonusCode));
           if (this.currentLocation) {
             this.loadRemainingRoutes();
           }
@@ -392,9 +391,9 @@ export class AppComponent implements OnInit, OnDestroy {
           this.includedBonuses = this.bonuses
             .filter((b) => b.Include === true)
             .sort((a, b) => a.Ordinal - b.Ordinal);
-          this.notIncludedBonuses = this.bonuses.filter(
-            (b) => b.Include === false
-          );
+          this.notIncludedBonuses = this.bonuses
+            .filter((b) => b.Include === false)
+            .sort((a, b) => a.BonusCode.localeCompare(b.BonusCode));
           this.loadRoutes().then(() => {
             if (this.currentLocation) {
               this.loadRemainingRoutes();
@@ -459,9 +458,9 @@ export class AppComponent implements OnInit, OnDestroy {
         this.includedBonuses = this.bonuses
           .filter((b) => b.Include === true)
           .sort((a, b) => a.Ordinal - b.Ordinal);
-        this.notIncludedBonuses = this.bonuses.filter(
-          (b) => b.Include === false
-        );
+        this.notIncludedBonuses = this.bonuses
+          .filter((b) => b.Include === false)
+          .sort((a, b) => a.BonusCode.localeCompare(b.BonusCode));
         this.loadRoutes().then(() => {
           if (this.currentLocation) {
             this.loadRemainingRoutes();
