@@ -47,6 +47,10 @@
       >
         <mat-panel-title>
           {{ bonus.BonusCode }} | {{ bonus.BonusName }} | {{ bonus.Points }}p
+          |&nbsp;
+          <span [ngStyle]="bonus.LayoverMinutes !== 10 ? { color: 'red' } : {}">
+            {{ bonus.LayoverMinutes }}
+          </span>
         </mat-panel-title>
       </mat-expansion-panel-header>
       <div fxLayout="column" fxFlexWrap="wrap">
