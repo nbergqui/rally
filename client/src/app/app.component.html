@@ -48,7 +48,13 @@
         <mat-panel-title>
           {{ bonus.BonusCode }} | {{ bonus.BonusName }} | {{ bonus.Points }}p
           |&nbsp;
-          <span [ngStyle]="bonus.LayoverMinutes !== 10 ? { color: 'red' } : {}">
+          <span
+            [ngStyle]="
+              bonus.LayoverMinutes !== 10 && bonus.LayoverMinutes !== 0
+                ? { color: 'red' }
+                : {}
+            "
+          >
             {{ bonus.LayoverMinutes }}
           </span>
         </mat-panel-title>
@@ -56,7 +62,7 @@
       <div fxLayout="column" fxFlexWrap="wrap">
         <div fxLayout="row" fxFlexWrap="wrap">
           <span class="route-details">
-            {{ bonus.Description }}
+            {{ bonus.Description }} | Hours: {{ bonus.AvailableHours }}
           </span>
         </div>
         <div
