@@ -1,4 +1,10 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChildren,
+  QueryList,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { Subscription } from "rxjs";
@@ -12,7 +18,10 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatRadioModule } from "@angular/material/radio";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { MatIconModule } from "@angular/material/icon";
-import { MatSlideToggleModule } from "@angular/material/slide-toggle";
+import {
+  MatSlideToggleModule,
+  MatSlideToggle,
+} from "@angular/material/slide-toggle";
 import { FlexLayoutModule } from "@angular/flex-layout";
 
 @Component({
@@ -29,6 +38,7 @@ import { FlexLayoutModule } from "@angular/flex-layout";
     MatExpansionModule,
     MatIconModule,
     MatSlideToggleModule,
+    MatSlideToggle,
     FlexLayoutModule,
   ],
   templateUrl: "./app.component.html",
@@ -64,6 +74,7 @@ export class AppComponent implements OnInit, OnDestroy {
   locationError: string | null = null;
   private subscriptions = new Subscription();
   private bonusesLoaded = false;
+  @ViewChildren("checklistToggle") checklistToggles: QueryList<any>;
 
   constructor(private apiService: ApiService) {}
 
@@ -72,6 +83,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loadLegs();
     this.loadBonuses();
     this.loadCurrentLocation();
+  }
+
+  clearChecklistToggles() {
+    this.checklistToggles.forEach((toggle) => (toggle.checked = false));
   }
 
   get sortedIncludedBonuses(): Bonus[] {
