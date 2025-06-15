@@ -209,8 +209,7 @@
     <p>No not included bonuses available.</p>
     }
   </mat-accordion>
-  }
-
+  } @if (false) {
   <h3>Settings</h3>
   <div fxLayout="column" fxLayoutGap="8px">Active Leg</div>
   @if (!isLoadingLegs) {
@@ -225,7 +224,7 @@
     >
     }
   </mat-radio-group>
-  }
+  } }
 
   <div class="margin-top-30">
     <button mat-flat-button (click)="clearChecklistToggles()">
