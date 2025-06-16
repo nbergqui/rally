@@ -20,7 +20,7 @@ where Leg = 1;
 update RallyLeg set CheckpointTime = '2025-06-22 21:00:00.000', StartTime = '2025-06-20 11:00:00.000'
 where Leg = 2;
 
-update RallyLeg set CheckpointTime = '2025-06-27 11:00:00.000', StartTime = '2025-06-23 11:00:00.000'
+update RallyLeg set CheckpointTime = '2025-06-27 11:00:00.000', StartTime = '2025-06-23 17:00:00.000'
 where Leg = 3;
 
 
@@ -94,3 +94,7 @@ INSERT INTO [dbo].[RallyBonuses] (
     41.6880, -91.5655, NULL, 'End Leg 3',
     3, 999, 1, 0, 0
 );
+
+
+
+
