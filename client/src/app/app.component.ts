@@ -57,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
   errorLegs: string | null = null;
   bonusCount = 0;
   legCount = 0;
-  activeLegId = 2;
+  activeLegId = 1;
   routes: {
     fromBonusCode: string;
     toBonusCode: string;
@@ -83,7 +83,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loadLegs();
     this.loadBonuses();
     this.loadCurrentLocation();
-    this.updateActiveLegId(this.activeLegId);
   }
 
   clearChecklistToggles() {
