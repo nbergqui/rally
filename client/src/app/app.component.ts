@@ -83,6 +83,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loadLegs();
     this.loadBonuses();
     this.loadCurrentLocation();
+    this.updateActiveLegId(this.activeLegId);
   }
 
   clearChecklistToggles() {
