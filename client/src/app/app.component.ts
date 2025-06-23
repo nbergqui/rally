@@ -57,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
   errorLegs: string | null = null;
   bonusCount = 0;
   legCount = 0;
-  activeLegId = 2;
+  activeLegId = 3;
   routes: {
     fromBonusCode: string;
     toBonusCode: string;
